@@ -2,6 +2,7 @@ import { Autoplay, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FiArrowRight, FiBriefcase, FiCheckCircle, FiGrid, FiPackage, FiUsers } from "react-icons/fi";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { ImagePlaceholder } from "./common";
 
 const stats = [{ value: "5,000+", label: "Products", icon: FiPackage, color: "bg-sky-500" }, { value: "200+", label: "Companies", icon: FiBriefcase, color: "bg-amber-500" }, { value: "100+", label: "Verified Sellers", icon: FiCheckCircle, color: "bg-red-500" }];
@@ -14,7 +15,7 @@ export default function Hero() {
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-sky-700 shadow-sm"><FiCheckCircle /> India&apos;s growing B2B network</div>
         <h1 className="max-w-3xl text-4xl font-black leading-[1.08] tracking-[-0.04em] text-slate-900 sm:text-5xl md:text-6xl">Find Industrial Products <span className="text-sky-600">From Trusted Companies</span></h1>
         <p className="mt-6 max-w-xl text-base leading-7 text-slate-600 md:text-lg">Explore products from multiple companies, connect directly with verified sellers, and request quotations instantly.</p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row"><a href="#products" className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3.5 font-extrabold text-white shadow-lg shadow-red-200 transition hover:-translate-y-1 hover:bg-red-700">Browse Products <FiArrowRight /></a><a href="#companies" className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-200 bg-white px-6 py-3.5 font-extrabold text-sky-700 transition hover:-translate-y-1 hover:border-sky-400 hover:bg-sky-50"><FiGrid /> Explore Companies</a></div>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link to="/catalogue" className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3.5 font-extrabold text-white shadow-lg shadow-red-200 transition hover:-translate-y-1 hover:bg-red-700">Browse Collections <FiArrowRight /></Link><Link to="/companies" className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-200 bg-white px-6 py-3.5 font-extrabold text-sky-700 transition hover:-translate-y-1 hover:border-sky-400 hover:bg-sky-50"><FiGrid /> Explore Companies</Link></div>
         <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-slate-500"><FiUsers className="text-sky-600" /> No cart. No checkout. Connect and deal directly.</p>
       </motion.div>
       <motion.div initial={{opacity:0,x:25}} animate={{opacity:1,x:0}} transition={{duration:.65}} className="relative mx-auto w-full max-w-xl pb-10">
