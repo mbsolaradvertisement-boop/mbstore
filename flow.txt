@@ -1,0 +1,544 @@
+Project Vision
+
+MB Store will be a multi-company B2B marketplace for industrial, electrical, solar, automation, or any other products.
+
+Instead of:
+
+Customer → Add to Cart → Checkout
+
+It becomes:
+
+Customer → Browse Products → Contact Seller → Negotiate → Order Offline
+
+This makes the platform much simpler while still very useful.
+
+Suggested Tech Stack
+Frontend
+React 19
+React Router
+Tailwind CSS
+Axios
+React Hook Form
+TanStack Query (optional)
+React Hot Toast
+Framer Motion
+Chart.js or Recharts
+React Icons
+Backend
+Node.js
+Express.js
+MySQL
+JWT Authentication
+bcrypt
+Multer (image uploads)
+Nodemailer
+Socket.io (optional for live chat)
+Storage
+Local uploads initially
+Later:
+Cloudinary
+AWS S3
+Four Roles
+MB STORE
+
+├── Admin
+├── Seller
+├── Customer
+└── Support
+1. Admin Dashboard
+
+The administrator controls everything.
+
+Modules:
+
+Dashboard
+
+Total Companies
+Total Sellers
+Total Customers
+Products
+Active Leads
+Pending Approvals
+
+Company Management
+
+Add Company
+Edit Company
+Activate
+Deactivate
+
+Seller Management
+
+Approve Seller
+Reject Seller
+Assign Company
+
+Customer Management
+
+Product Management
+
+Categories
+
+Brands
+
+Reports
+
+Website CMS
+
+Banner Management
+
+Notifications
+
+Support Tickets
+
+Analytics
+
+2. Seller Dashboard
+
+Each seller belongs to one company.
+
+Example
+
+ABB
+
+Seller 1
+Seller 2
+Seller 3
+
+
+Seller Features
+
+Dashboard
+
+My Products
+
+Add Product
+
+Edit Product
+
+Delete Product
+
+Stock Status
+
+Leads
+
+Customer Enquiries
+
+Chat
+
+Company Profile
+
+Orders (optional)
+
+Notifications
+
+3. Customer Dashboard
+
+Dashboard
+
+Browse Products
+
+Favorite Products ❤️
+
+Compare Products
+
+My Enquiries
+
+Chat with Sellers
+
+Download Datasheets
+
+Request Quotations
+
+Notifications
+
+Profile
+
+No Cart
+
+No Checkout
+
+4. Support Dashboard
+
+Support team can
+
+View Tickets
+
+Assign Tickets
+
+Reply Customers
+
+Reply Sellers
+
+Manage FAQ
+
+Manage Contact Requests
+
+Close Tickets
+
+Website Pages
+
+Home
+
+About
+
+Products
+
+Companies
+
+Categories
+
+Brands
+
+Contact
+
+Support
+
+Login
+
+Register
+
+Forgot Password
+
+Product Flow
+Customer
+
+↓
+
+Search Product
+
+↓
+
+View Details
+
+↓
+
+Contact Seller
+
+↓
+
+Send Requirement
+
+↓
+
+Seller Receives Lead
+
+↓
+
+Seller Replies
+
+↓
+
+Deal Done Offline
+Product Detail Page
+
+Instead of
+
+Add to Cart
+
+
+Use
+
+Request Quote
+
+Call Seller
+
+WhatsApp Seller
+
+Email Seller
+
+Live Chat
+
+Download Catalogue
+
+This feels much more B2B.
+
+Companies
+
+Example
+
+ABB
+
+Siemens
+
+Schneider
+
+Havells
+
+L&T
+
+Delta
+
+Growatt
+
+SMA
+
+Tata
+
+Adani
+
+Each company owns products.
+
+Product Structure
+Category
+
+↓
+
+Subcategory
+
+↓
+
+Brand
+
+↓
+
+Company
+
+↓
+
+Product
+
+Example
+
+Electrical
+
+↓
+
+MCB
+
+↓
+
+ABB
+
+↓
+
+ABB India
+
+↓
+
+ABB MCB 63A
+Customer Enquiry
+
+Instead of cart
+
+Customer clicks
+
+Request Quote
+
+↓
+
+Enter
+
+Name
+
+Phone
+
+Email
+
+Requirement
+
+Quantity
+
+Location
+
+↓
+
+Seller gets notification
+
+↓
+
+Seller contacts customer
+Extra Features (Recommended)
+Product Comparison
+
+Compare 4 products side by side.
+
+Favorite Products
+
+Wishlist without purchasing.
+
+Recently Viewed
+
+Track viewed products.
+
+Download Catalog
+
+Allow PDF downloads.
+
+Product Documents
+
+Datasheet
+
+Brochure
+
+Manual
+
+Certificates
+
+Multi Images
+
+Gallery
+
+360°
+
+Video
+
+Product Filters
+
+Company
+
+Brand
+
+Voltage
+
+Capacity
+
+Power
+
+Warranty
+
+Country
+
+Price (optional)
+
+SEO
+
+SEO URL
+
+/products/solar-panel-540w
+Search
+
+Autocomplete
+
+Category search
+
+Brand search
+
+Company search
+
+Reviews
+
+Instead of star ratings
+
+Allow
+
+Verified Buyer Review
+
+QR Code
+
+Each product gets a QR Code.
+
+Share
+
+WhatsApp
+
+LinkedIn
+
+Email
+
+Notifications
+
+Email
+
+Dashboard
+
+Browser
+
+Database Tables
+users
+
+roles
+
+companies
+
+sellers
+
+customers
+
+products
+
+categories
+
+subcategories
+
+brands
+
+product_images
+
+product_documents
+
+enquiries
+
+notifications
+
+support_tickets
+
+messages
+
+favorites
+
+recent_views
+
+banners
+
+settings
+
+activity_logs
+Folder Structure
+mb-store/
+
+│
+├── client/
+│
+│   ├── public/
+│   ├── src/
+│   │
+│   ├── assets/
+│   ├── components/
+│   ├── layouts/
+│   ├── pages/
+│   │
+│   ├── Home/
+│   ├── Products/
+│   ├── Company/
+│   ├── Admin/
+│   ├── Seller/
+│   ├── Customer/
+│   ├── Support/
+│   │
+│   ├── hooks/
+│   ├── context/
+│   ├── services/
+│   ├── utils/
+│   └── routes/
+│
+└── server/
+    ├── config/
+    ├── controllers/
+    ├── middleware/
+    ├── models/
+    ├── routes/
+    ├── services/
+    ├── uploads/
+    ├── utils/
+    └── app.js
+Features that will make MB Store stand out
+
+Rather than cloning SunStore exactly, I'd add a few differentiators:
+
+Multi-company catalogs: One platform where many companies manage their own product catalogs under separate seller accounts.
+Lead management: Every inquiry becomes a lead that sellers can track through stages like New → Contacted → Quoted → Won/Lost.
+Role-based dashboards: Each role sees only what's relevant to them, with tailored analytics.
+Advanced product information: Rich specifications, downloadable datasheets, certifications, videos, and comparison tools.
+Company storefronts: Each company gets its own public profile with products, contact details, and branding.
+Inquiry-first workflow: Replace the cart with a streamlined "Request Quote" flow that can include quantity, project details, location, and attachments.
+Scalable permissions: Keep the architecture flexible so future roles (such as regional managers or company admins) can be added without major changes.
+Development roadmap
+
+I recommend building this in phases:
+
+Phase 1: Project setup, authentication, role-based access, MySQL schema.
+Phase 2: Admin dashboard, company management, categories, brands.
+Phase 3: Seller dashboard and product management.
+Phase 4: Customer-facing website with search, filters, product pages, and inquiry flow.
+Phase 5: Support dashboard, notifications, reporting, polishing, and deployment.
