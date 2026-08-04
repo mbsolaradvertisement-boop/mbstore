@@ -30,6 +30,20 @@ button, a { -webkit-tap-highlight-color: transparent; }
   background-size: 14px 14px;
 }
 
+.mb-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.mb-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 72%), transparent);
+  animation: mb-skeleton-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes mb-skeleton-shimmer { to { transform: translateX(100%); } }
+
 :focus-visible { outline: 3px solid #f59e0b; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

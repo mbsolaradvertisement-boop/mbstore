@@ -1,0 +1,11 @@
+const router = require("express").Router();
+const { param, body } = require("express-validator");
+const controller = require("../controllers/admin.controller");
+const asyncHandler = require("../utils/async-handler");
+const validate = require("../middleware/validate.middleware");
+const { authMiddleware, adminMiddleware } = require("../middleware/auth.middleware");
+router.use(authMiddleware, adminMiddleware);
+router.get("/seller-requests", asyncHandler(controller.requests));
+router.put("/approve/:id", param("id").isInt({ min: 1 }), validate, asyncHandler(controller.approve));
+router.put("/reject/:id", [param("id").isInt({ min: 1 }), body("reason").optional().trim().isLength({ max: 500 })], validate, asyncHandler(controller.reject));
+module.exports = router;

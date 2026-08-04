@@ -1,0 +1,2 @@
+import { motion } from "framer-motion";
+export default function Modal({ title, children }) { return <div className="fixed inset-0 z-[10000] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="modal-title"><motion.div initial={{ opacity: 0, y: 16, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl sm:p-8"><h2 id="modal-title" className="text-2xl font-black tracking-tight text-slate-900">{title}</h2>{children}</motion.div></div>; }

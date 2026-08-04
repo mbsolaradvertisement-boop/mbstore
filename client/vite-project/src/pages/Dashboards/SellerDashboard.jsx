@@ -1,0 +1,2 @@
+import DashboardShell from "./DashboardShell";
+export default function SellerDashboard(){return <DashboardShell eyebrow="Verified seller" title="Seller Dashboard"><div className="grid gap-4 sm:grid-cols-3">{["Products","Enquiries","Profile"].map((name)=><div key={name} className="rounded-2xl border border-slate-200 bg-white p-6"><p className="font-bold text-slate-500">{name}</p><strong className="mt-3 block text-3xl text-slate-900">0</strong></div>)}</div></DashboardShell>}
