@@ -14,9 +14,10 @@ const Catalogue = lazyPage(() => import("../pages/Products/Catalogue"));
 const Companies = lazyPage(() => import("../pages/Company"));
 const AuthPage = lazyPage(() => import("../pages/Auth/AuthPage"));
 const CustomerHome = lazyPage(() => import("../pages/Dashboards/CustomerHome"));
-const SellerDashboard = lazyPage(() => import("../pages/Dashboards/SellerDashboard"));
+const SellerLayout = lazyPage(() => import("../pages/Dashboards/SellerLayout"));
+const SellerPages = lazyPage(() => import("../pages/Dashboards/SellerPages"));
 const AdminDashboard = lazyPage(() => import("../pages/Dashboards/AdminDashboard"));
 
 export default function AppRoutes() {
-  return <Suspense fallback={<PageLoader />}><Routes><Route path="/" element={<Home />} /><Route path="/catalogue" element={<Catalogue />} /><Route path="/companies" element={<Companies />} /><Route path="/login" element={<AuthPage mode="login" />} /><Route path="/register" element={<AuthPage mode="register" />} /><Route element={<ProtectedRoute roles={["Customer"]} />}><Route path="/customer/home" element={<CustomerHome />} /></Route><Route element={<ProtectedRoute roles={["Seller"]} />}><Route path="/seller/dashboard" element={<SellerDashboard />} /></Route><Route element={<ProtectedRoute roles={["Admin"]} />}><Route path="/admin/dashboard" element={<AdminDashboard />} /></Route><Route path="*" element={<Navigate to="/" replace />} /></Routes></Suspense>;
+  return <Suspense fallback={<PageLoader />}><Routes><Route path="/" element={<Home />} /><Route path="/catalogue" element={<Catalogue />} /><Route path="/companies" element={<Companies />} /><Route path="/login" element={<AuthPage mode="login" />} /><Route path="/register" element={<AuthPage mode="register" />} /><Route element={<ProtectedRoute roles={["Customer"]} />}><Route path="/customer/home" element={<CustomerHome />} /></Route><Route element={<ProtectedRoute roles={["Seller"]} />}><Route path="/seller" element={<SellerLayout />}><Route index element={<Navigate to="dashboard" replace />} /><Route path=":section" element={<SellerPages />} /></Route></Route><Route element={<ProtectedRoute roles={["Admin"]} />}><Route path="/admin/dashboard" element={<AdminDashboard />} /></Route><Route path="*" element={<Navigate to="/" replace />} /></Routes></Suspense>;
 }
