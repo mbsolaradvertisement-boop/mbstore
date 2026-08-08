@@ -1,0 +1,3 @@
+import CustomerLayout from "../../layout/customer/CustomerLayout";
+
+export default function CustomerSettings(){return <CustomerLayout title="Settings"><section className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h1 className="text-2xl font-black">Account Settings</h1><p className="mt-2 text-sm text-slate-500">Manage your customer account preferences.</p><div className="mt-6 divide-y divide-slate-100">{["Email notifications","Product updates","Quotation alerts"].map((label,index)=><label key={label} className="flex items-center justify-between py-4 font-semibold text-slate-700"><span>{label}</span><input type="checkbox" defaultChecked={index<2} className="size-5 accent-teal-700"/></label>)}</div></section></CustomerLayout>}

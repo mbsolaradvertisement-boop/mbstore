@@ -8,9 +8,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 const adminNavigation = [
-  ["Dashboard", FiGrid, "/admin/dashboard"], ["Company Management", FiShoppingBag],
+  ["Dashboard", FiGrid, "/admin/dashboard"], ["Company Management", FiShoppingBag, "/admin/companies"],
   ["Seller Management", FiUsers, "/admin/sellers"], ["Customer Management", FiUsers, "/admin/customers"],
-  ["Product Management", FiBox], ["Categories", FiLayers], ["Brands", FiTag],
+  ["Product Management", FiBox], ["Categories", FiLayers, "/admin/categories"], ["Brands", FiTag],
   ["Reports", FiActivity], ["Website CMS", FiSettings], ["Banner Management", FiImage],
   ["Notifications", FiBell], ["Support Tickets", FiHelpCircle], ["Analytics", FiActivity],
 ];
