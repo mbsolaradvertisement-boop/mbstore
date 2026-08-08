@@ -542,3 +542,32 @@ Phase 2: Admin dashboard, company management, categories, brands.
 Phase 3: Seller dashboard and product management.
 Phase 4: Customer-facing website with search, filters, product pages, and inquiry flow.
 Phase 5: Support dashboard, notifications, reporting, polishing, and deployment.
+
+
+                    MB STORE
+                       │
+             ┌─────────┴─────────┐
+             │                   │
+          BRANDS             CATEGORIES
+             │                   │
+       Waaree              Solar Panels
+       Tata                 Inverters
+       Adani                Batteries
+       Pyari                Structures
+             │                   │
+             └─────────┬─────────┘
+                       │
+                    PRODUCTS
+                       │
+              Waaree 540W Panel
+              Tata 550W Panel
+              Pyari 1200W Panel
+                       │
+                       │
+                SELLER LISTINGS
+                       │
+          ┌────────────┼────────────┐
+          │            │            │
+       Seller A     Seller B     Seller C
+          │            │            │
+       Quote        Quote        Quote

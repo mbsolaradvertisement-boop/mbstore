@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import api from "../../lib/api";
+import ProfileProgressBadge from "../../components/ProfileProgressBadge";
 import {
   FiBell,
   FiChevronDown,
@@ -12,6 +15,8 @@ export default function CustomerNavbar({
   setSidebarOpen,
 }) {
   const { user } = useAuth();
+  const [completion, setCompletion] = useState(null);
+  useEffect(() => { const load=()=>api.get("/customer/profile").then(({ data }) => setCompletion(data.profile.profileCompletion)).catch(() => {}); load(); window.addEventListener("mb:customer-profile-updated",load); return()=>window.removeEventListener("mb:customer-profile-updated",load); }, []);
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
@@ -59,6 +64,8 @@ export default function CustomerNavbar({
 
         <div className="flex items-center gap-5">
 
+          <ProfileProgressBadge completion={completion} to="/customer/profile" />
+
           {/* Notifications */}
 
           <button className="relative rounded-2xl border border-slate-200 p-3 hover:bg-slate-100">
@@ -83,7 +90,7 @@ export default function CustomerNavbar({
               </p>
 
               <p className="text-sm text-slate-500">
-                Customer
+                {completion === null ? "Customer" : `${completion === 100 ? "Profile" : "Complete Profile"} · ${completion}%`}
               </p>
             </div>
 

@@ -18,14 +18,13 @@ import {
   FiChevronRight,
   FiMenu,
   FiX,
-  FiPackage,
 } from "react-icons/fi";
 
 const menu = [
   {
     title: "Dashboard",
     icon: FiHome,
-    path: "/customer/dashboard",
+    path: "/customer/home",
   },
   {
     title: "Browse Products",
@@ -139,24 +138,10 @@ export default function CustomerSidebar({
 
         <div className="flex h-20 items-center justify-between border-b border-slate-200 px-5">
           <Link
-            to="/customer/dashboard"
+            to="/customer/home"
             className="flex items-center gap-3"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-700 text-white">
-              <FiPackage size={22} />
-            </div>
-
-            {!collapsed && (
-              <div>
-                <h2 className="font-bold text-slate-900">
-                  MB Store
-                </h2>
-
-                <p className="text-xs text-slate-500">
-                  Customer Portal
-                </p>
-              </div>
-            )}
+            <img src="/assests/mb.png" alt="MB Store" className={`h-12 object-contain object-left ${collapsed ? "w-11 object-cover" : "w-44"}`} />
           </Link>
 
           {/* Mobile Close */}

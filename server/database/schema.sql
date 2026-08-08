@@ -45,3 +45,49 @@ CREATE TABLE IF NOT EXISTS sessions (
   CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_sessions_expiry (expires_at)
 );
+
+CREATE TABLE IF NOT EXISTS customer_profiles (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL UNIQUE,
+  customer_id VARCHAR(32) NOT NULL UNIQUE,
+  customer_name VARCHAR(120) NOT NULL,
+  email VARCHAR(254) NOT NULL UNIQUE,
+  phone_number VARCHAR(16) NULL UNIQUE,
+  address VARCHAR(255) NULL,
+  state VARCHAR(100) NULL,
+  district VARCHAR(100) NULL,
+  area VARCHAR(120) NULL,
+  landmark VARCHAR(160) NULL,
+  profile_completion TINYINT UNSIGNED NOT NULL DEFAULT 25,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_customer_profile_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_customer_profile_search (customer_name, state, district),
+  INDEX idx_customer_profile_phone (phone_number)
+);
+
+CREATE TABLE IF NOT EXISTS seller_profiles (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL UNIQUE,
+  seller_id VARCHAR(32) NOT NULL UNIQUE,
+  seller_name VARCHAR(120) NOT NULL,
+  email VARCHAR(254) NOT NULL UNIQUE,
+  phone_number VARCHAR(16) NULL UNIQUE,
+  address VARCHAR(255) NULL,
+  state VARCHAR(100) NULL,
+  district VARCHAR(100) NULL,
+  area VARCHAR(120) NULL,
+  landmark VARCHAR(160) NULL,
+  company_name VARCHAR(160) NULL,
+  business_email VARCHAR(254) NULL,
+  gst CHAR(15) NULL UNIQUE,
+  website VARCHAR(500) NULL,
+  profile_completion TINYINT UNSIGNED NOT NULL DEFAULT 25,
+  verification_status ENUM('Pending','Verified','Rejected') NOT NULL DEFAULT 'Pending',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_seller_profile_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_seller_profile_search (seller_name, company_name),
+  INDEX idx_seller_profile_location (state, district),
+  INDEX idx_seller_profile_phone (phone_number)
+);

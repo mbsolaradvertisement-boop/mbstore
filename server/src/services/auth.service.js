@@ -10,7 +10,7 @@ async function findUserById(id) { const [rows] = await pool.execute("SELECT * FR
 
 async function startRegistration(name, email) {
   email = otpService.normalize(email);
-  if (await findUserByEmail(email)) throw new ApiError(409, "Email already registered.", "DUPLICATE_EMAIL");
+  if (await findUserByEmail(email)) throw new ApiError(409, "Email already exists.", "DUPLICATE_EMAIL");
   await otpService.issue(email, name);
   return { email, expiresIn: 600, resendAfter: 60 };
 }
@@ -24,7 +24,7 @@ async function sendLoginOtp(email) {
 
 async function verifyRegistrationOtp(email, otp, name) {
   email = otpService.normalize(email);
-  if (await findUserByEmail(email)) throw new ApiError(409, "Email already registered.", "DUPLICATE_EMAIL");
+  if (await findUserByEmail(email)) throw new ApiError(409, "Email already exists.", "DUPLICATE_EMAIL");
   await otpService.verify(email, otp);
   return { registrationToken: signRegistration(email, name) };
 }
@@ -40,14 +40,29 @@ async function createSession(user, metadata) {
   return { token, user: publicUser(user), expiresAt };
 }
 
+async function generateProfileId(connection, table, column) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const id = `MBS-${Math.floor(100000 + Math.random() * 900000)}`;
+    const [rows] = await connection.execute(`SELECT 1 FROM ${table} WHERE ${column} = ? LIMIT 1`, [id]);
+    if (!rows.length) return id;
+  }
+  throw new ApiError(500, "Unable to generate a profile ID.", "ID_GENERATION_FAILED");
+}
+
 async function registerCustomer(token, metadata) {
   const { email, name } = registrationFromToken(token);
+  const connection = await pool.getConnection();
   try {
-    const [result] = await pool.execute("INSERT INTO users (name, email, role, status, login_allowed, email_verified) VALUES (?, ?, 'Customer', 'Verified', TRUE, TRUE)", [name, email]);
+    await connection.beginTransaction();
+    const [result] = await connection.execute("INSERT INTO users (name, email, role, status, login_allowed, email_verified) VALUES (?, ?, 'Customer', 'Verified', TRUE, TRUE)", [name, email]);
+    const customerId = await generateProfileId(connection, "customer_profiles", "customer_id");
+    await connection.execute("INSERT INTO customer_profiles (user_id, customer_id, customer_name, email, profile_completion) VALUES (?, ?, ?, ?, 25)", [result.insertId, customerId, name, email]);
+    await connection.commit();
     const user = await findUserByEmail(email); const session = await createSession(user, metadata);
     emailService.sendWelcomeCustomer(email, name).catch((error) => console.error("Welcome email failed:", error.message));
     return session;
-  } catch (error) { if (error.code === "ER_DUP_ENTRY") throw new ApiError(409, "Email already registered.", "DUPLICATE_EMAIL"); throw error; }
+  } catch (error) { await connection.rollback(); if (error.code === "ER_DUP_ENTRY") throw new ApiError(409, "Email already exists.", "DUPLICATE_EMAIL"); throw error; }
+  finally { connection.release(); }
 }
 
 async function registerSeller(token, details) {
@@ -56,8 +71,10 @@ async function registerSeller(token, details) {
     await connection.beginTransaction();
     const [user] = await connection.execute("INSERT INTO users (name, email, role, status, login_allowed, email_verified) VALUES (?, ?, 'Seller', 'Pending', FALSE, TRUE)", [name, email]);
     await connection.execute("INSERT INTO seller_verifications (user_id, business_name, gst_number, contact_person, verification_status) VALUES (?, ?, ?, ?, 'Pending')", [user.insertId, details.businessName, details.gstNumber, details.contactPerson]);
+    const sellerId = await generateProfileId(connection, "seller_profiles", "seller_id");
+    await connection.execute("INSERT INTO seller_profiles (user_id, seller_id, seller_name, email, company_name, gst, verification_status, profile_completion) VALUES (?, ?, ?, ?, ?, ?, 'Pending', 42)", [user.insertId, sellerId, name, email, details.businessName, details.gstNumber]);
     await connection.commit(); return findUserById(user.insertId);
-  } catch (error) { await connection.rollback(); if (error.code === "ER_DUP_ENTRY") throw new ApiError(409, error.message.includes("gst") ? "GST number already registered." : "Email already registered.", "DUPLICATE_VALUE"); throw error; }
+  } catch (error) { await connection.rollback(); if (error.code === "ER_DUP_ENTRY") throw new ApiError(409, error.message.toLowerCase().includes("gst") ? "GST number already exists." : "Email already exists.", error.message.toLowerCase().includes("gst") ? "DUPLICATE_GST" : "DUPLICATE_EMAIL"); throw error; }
   finally { connection.release(); }
 }
 

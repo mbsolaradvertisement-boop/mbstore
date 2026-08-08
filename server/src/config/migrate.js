@@ -29,6 +29,20 @@ async function migrate() {
     const sellerColumnNames = new Set(sellerColumns.map((column) => column.Field));
     if (!sellerColumnNames.has("business_name")) await connection.query("ALTER TABLE seller_verifications ADD COLUMN business_name VARCHAR(160) NULL AFTER user_id");
     if (!sellerColumnNames.has("contact_person")) await connection.query("ALTER TABLE seller_verifications ADD COLUMN contact_person VARCHAR(120) NULL AFTER gst_number");
+
+    // Backfill profiles for accounts created before profile tables existed.
+    const [customers] = await connection.query("SELECT id, name, email FROM users u WHERE role='Customer' AND NOT EXISTS (SELECT 1 FROM customer_profiles p WHERE p.user_id=u.id)");
+    for (const customer of customers) {
+      let customerId;
+      do { customerId = `MBS-${Math.floor(100000 + Math.random() * 900000)}`; } while ((await connection.execute("SELECT 1 FROM customer_profiles WHERE customer_id=?", [customerId]))[0].length);
+      await connection.execute("INSERT INTO customer_profiles (user_id, customer_id, customer_name, email, profile_completion) VALUES (?, ?, ?, ?, 25)", [customer.id, customerId, customer.name, customer.email]);
+    }
+    const [sellers] = await connection.query("SELECT u.id, u.name, u.email, u.status, sv.business_name, sv.gst_number, sv.verification_status FROM users u LEFT JOIN seller_verifications sv ON sv.user_id=u.id WHERE u.role='Seller' AND NOT EXISTS (SELECT 1 FROM seller_profiles p WHERE p.user_id=u.id)");
+    for (const seller of sellers) {
+      let sellerId;
+      do { sellerId = `MBS-${Math.floor(100000 + Math.random() * 900000)}`; } while ((await connection.execute("SELECT 1 FROM seller_profiles WHERE seller_id=?", [sellerId]))[0].length);
+      await connection.execute("INSERT INTO seller_profiles (user_id, seller_id, seller_name, email, company_name, gst, verification_status, profile_completion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [seller.id, sellerId, seller.name, seller.email, seller.business_name || null, seller.gst_number || null, seller.verification_status || (seller.status === "Verified" ? "Verified" : "Pending"), seller.business_name && seller.gst_number ? 42 : 18]);
+    }
   } finally {
     connection.release();
   }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import CustomerSidebar from "./CustomerSidebar";
 import CustomerNavbar from "./CustomerNavbar";
+import ProfileCompletionPrompt from "../../components/ProfileCompletionPrompt";
 
 export default function CustomerLayout({
   children,
@@ -11,6 +12,7 @@ export default function CustomerLayout({
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <ProfileCompletionPrompt role="Customer" />
       {/* Sidebar */}
       <CustomerSidebar
         sidebarOpen={sidebarOpen}

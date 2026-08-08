@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const authRoutes = require("./routes/auth.routes");
 const adminRoutes = require("./routes/admin.routes");
+const profileRoutes = require("./routes/profile.routes");
 const { errorHandler, notFound } = require("./middleware/error.middleware");
 
 const app = express();
@@ -18,6 +19,7 @@ app.use("/api/auth", rateLimit({ windowMs: 15 * 60 * 1000, limit: 100, standardH
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api", profileRoutes);
 app.use(notFound);
 app.use(errorHandler);
 

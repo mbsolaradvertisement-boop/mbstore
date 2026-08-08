@@ -6,6 +6,8 @@ const validate = require("../middleware/validate.middleware");
 const { authMiddleware, adminMiddleware } = require("../middleware/auth.middleware");
 router.use(authMiddleware, adminMiddleware);
 router.get("/seller-requests", asyncHandler(controller.requests));
+router.get("/sellers", asyncHandler(controller.sellers));
+router.get("/customers", asyncHandler(controller.customers));
 router.put("/approve/:id", param("id").isInt({ min: 1 }), validate, asyncHandler(controller.approve));
 router.put("/reject/:id", [param("id").isInt({ min: 1 }), body("reason").optional().trim().isLength({ max: 500 })], validate, asyncHandler(controller.reject));
 module.exports = router;
