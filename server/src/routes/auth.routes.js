@@ -3,7 +3,7 @@ const controller = require("../controllers/auth.controller");
 const asyncHandler = require("../utils/async-handler");
 const validate = require("../middleware/validate.middleware");
 const rules = require("../validators/auth.validators");
-const { optionalAuthMiddleware } = require("../middleware/auth.middleware");
+const { authMiddleware } = require("../middleware/auth.middleware");
 router.post("/register", rules.registerRules, validate, asyncHandler(controller.register));
 router.post("/send-otp", rules.sendOtpRules, validate, asyncHandler(controller.sendOtp));
 router.post("/verify-otp", rules.verifyOtpRules, validate, asyncHandler(controller.verifyOtp));
@@ -11,5 +11,5 @@ router.post("/register/customer", rules.customerRules, validate, asyncHandler(co
 router.post("/register/seller", rules.sellerRules, validate, asyncHandler(controller.registerSeller));
 router.post("/login", rules.loginRules, validate, asyncHandler(controller.login));
 router.post("/logout", asyncHandler(controller.logout));
-router.get("/me", optionalAuthMiddleware, asyncHandler(controller.me));
+router.get("/me", authMiddleware, asyncHandler(controller.me));
 module.exports = router;
