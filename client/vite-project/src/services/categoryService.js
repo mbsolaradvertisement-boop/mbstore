@@ -1,5 +1,6 @@
 import api from "../lib/api";
 export const getAdminCategories=params=>api.get("/admin/categories",{params});
+export const getCategoryOptions=()=>api.get("/admin/categories/options");
 export const getAdminCategory=id=>api.get(`/admin/categories/${id}`);
 export const createCategory=data=>api.post("/admin/categories",data);
 export const updateCategory=(id,data)=>api.put(`/admin/categories/${id}`,data);

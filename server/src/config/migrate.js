@@ -30,6 +30,12 @@ async function migrate() {
     if (!sellerColumnNames.has("business_name")) await connection.query("ALTER TABLE seller_verifications ADD COLUMN business_name VARCHAR(160) NULL AFTER user_id");
     if (!sellerColumnNames.has("contact_person")) await connection.query("ALTER TABLE seller_verifications ADD COLUMN contact_person VARCHAR(120) NULL AFTER gst_number");
 
+    const [productImageColumns] = await connection.query("SHOW COLUMNS FROM product_images");
+    const productImageUrl = productImageColumns.find((column) => column.Field === "image_url");
+    if (productImageUrl && !/mediumtext/i.test(productImageUrl.Type)) {
+      await connection.query("ALTER TABLE product_images MODIFY COLUMN image_url MEDIUMTEXT NOT NULL");
+    }
+
     // Backfill profiles for accounts created before profile tables existed.
     const [customers] = await connection.query("SELECT id, name, email FROM users u WHERE role='Customer' AND NOT EXISTS (SELECT 1 FROM customer_profiles p WHERE p.user_id=u.id)");
     for (const customer of customers) {

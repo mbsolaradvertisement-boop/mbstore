@@ -15,6 +15,7 @@ router.post("/companies", asyncHandler(companyController.create));
 router.get("/companies/:id/logo", param("id").isInt({min:1}), validate, asyncHandler(companyController.logo));
 router.delete("/companies/:id", param("id").isInt({min:1}), validate, asyncHandler(companyController.remove));
 router.get("/categories", asyncHandler(categoryController.list));
+router.get("/categories/options", asyncHandler(categoryController.options));
 router.post("/categories", asyncHandler(categoryController.create));
 router.get("/categories/:id", param("id").isInt({min:1}), validate, asyncHandler(categoryController.one));
 router.put("/categories/:id", param("id").isInt({min:1}), validate, asyncHandler(categoryController.update));
