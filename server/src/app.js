@@ -9,6 +9,7 @@ const profileRoutes = require("./routes/profile.routes");
 const companyRoutes = require("./routes/company.routes");
 const categoryRoutes = require("./routes/category.routes");
 const productRoutes = require("./routes/product.routes");
+const catalogueRoutes = require("./routes/catalogue.routes");
 const { errorHandler, notFound } = require("./middleware/error.middleware");
 
 const app = express();
@@ -26,6 +27,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/companies", companyRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/seller/products", productRoutes);
+app.use("/api/catalogue", catalogueRoutes);
 app.use("/api", profileRoutes);
 app.use(notFound);
 app.use(errorHandler);

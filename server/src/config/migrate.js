@@ -36,6 +36,14 @@ async function migrate() {
       await connection.query("ALTER TABLE product_images MODIFY COLUMN image_url MEDIUMTEXT NOT NULL");
     }
 
+    const [productColumns] = await connection.query("SHOW COLUMNS FROM products");
+    if (!productColumns.some((column) => column.Field === "company_id")) {
+      await connection.query("ALTER TABLE products ADD COLUMN company_id BIGINT UNSIGNED NULL AFTER category_id");
+      await connection.query("ALTER TABLE products ADD CONSTRAINT fk_product_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL");
+      await connection.query("CREATE INDEX idx_products_company ON products(company_id)");
+      await connection.query("UPDATE products p JOIN companies co ON LOWER(co.company_name)=LOWER(p.brand) SET p.company_id=co.id WHERE p.company_id IS NULL");
+    }
+
     // Backfill profiles for accounts created before profile tables existed.
     const [customers] = await connection.query("SELECT id, name, email FROM users u WHERE role='Customer' AND NOT EXISTS (SELECT 1 FROM customer_profiles p WHERE p.user_id=u.id)");
     for (const customer of customers) {

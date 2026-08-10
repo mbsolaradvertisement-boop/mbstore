@@ -139,6 +139,7 @@ CREATE TABLE IF NOT EXISTS products (
   product_code VARCHAR(32) NOT NULL UNIQUE,
   seller_id BIGINT UNSIGNED NOT NULL,
   category_id BIGINT UNSIGNED NOT NULL,
+  company_id BIGINT UNSIGNED NULL,
   product_name VARCHAR(180) NOT NULL,
   brand VARCHAR(120) NOT NULL,
   description TEXT NOT NULL,
@@ -149,8 +150,10 @@ CREATE TABLE IF NOT EXISTS products (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_product_seller FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE RESTRICT,
   CONSTRAINT fk_product_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_product_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL,
   INDEX idx_products_seller (seller_id),
   INDEX idx_products_category (category_id),
+  INDEX idx_products_company (company_id),
   INDEX idx_products_status (status),
   INDEX idx_products_code (product_code),
   INDEX idx_products_search (product_name, brand)
