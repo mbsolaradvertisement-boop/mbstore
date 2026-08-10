@@ -143,6 +143,7 @@ CREATE TABLE IF NOT EXISTS products (
   product_name VARCHAR(180) NOT NULL,
   brand VARCHAR(120) NOT NULL,
   description TEXT NOT NULL,
+  availability ENUM('in_stock','low_stock','out_of_stock') NOT NULL DEFAULT 'in_stock',
   status ENUM('draft','active','inactive','pending','deleted') NOT NULL DEFAULT 'active',
   views INT UNSIGNED NOT NULL DEFAULT 0,
   enquiries INT UNSIGNED NOT NULL DEFAULT 0,
@@ -193,4 +194,60 @@ CREATE TABLE IF NOT EXISTS product_documents (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_product_document_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
   INDEX idx_product_documents_product (product_id)
+);
+
+CREATE TABLE IF NOT EXISTS quotation_requests (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  quotation_number VARCHAR(32) NOT NULL UNIQUE,
+  customer_id BIGINT UNSIGNED NOT NULL,
+  seller_id BIGINT UNSIGNED NOT NULL,
+  product_id BIGINT UNSIGNED NOT NULL,
+  product_name_snapshot VARCHAR(180) NOT NULL,
+  brand_snapshot VARCHAR(120) NOT NULL,
+  seller_company_snapshot VARCHAR(160) NOT NULL,
+  quantity INT UNSIGNED NOT NULL,
+  customer_message VARCHAR(1000) NULL,
+  customer_phone VARCHAR(16) NULL,
+  status ENUM('pending','quoted','rejected') NOT NULL DEFAULT 'pending',
+  seller_rejection_reason VARCHAR(1000) NULL,
+  responded_at TIMESTAMP NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_quotation_customer FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_quotation_seller FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_quotation_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT,
+  INDEX idx_quotation_customer (customer_id, created_at),
+  INDEX idx_quotation_seller (seller_id, created_at),
+  INDEX idx_quotation_product (product_id),
+  INDEX idx_quotation_status (status)
+);
+
+CREATE TABLE IF NOT EXISTS quotation_responses (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  quotation_request_id BIGINT UNSIGNED NOT NULL UNIQUE,
+  seller_id BIGINT UNSIGNED NOT NULL,
+  price_per_unit DECIMAL(14,2) NOT NULL,
+  total_price DECIMAL(14,2) NOT NULL,
+  delivery_time VARCHAR(160) NOT NULL,
+  message VARCHAR(1000) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_response_request FOREIGN KEY (quotation_request_id) REFERENCES quotation_requests(id) ON DELETE CASCADE,
+  CONSTRAINT fk_response_seller FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE RESTRICT,
+  INDEX idx_response_seller (seller_id)
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  type VARCHAR(50) NOT NULL,
+  title VARCHAR(180) NOT NULL,
+  message VARCHAR(500) NOT NULL,
+  entity_type VARCHAR(50) NULL,
+  entity_id BIGINT UNSIGNED NULL,
+  read_at TIMESTAMP NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_notification_user_created (user_id, created_at),
+  INDEX idx_notification_user_read (user_id, read_at)
 );

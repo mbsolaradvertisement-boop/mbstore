@@ -7,7 +7,7 @@ import ProfileCompletionPrompt from "../../components/ProfileCompletionPrompt";
 import api from "../../lib/api";
 import ProfileProgressBadge from "../../components/ProfileProgressBadge";
 
-const nav = [["Dashboard", "dashboard", FiHome], ["Products", "products", FiBox], ["Stock Status", "stock", FiActivity], ["Leads", "leads", FiUsers], ["Customer Enquiries", "enquiries", FiMessageCircle], ["Chat", "chat", FiMessageCircle], ["Quotations", "quotations", FiFileText], ["Company Profile", "company", FiBriefcase], ["Reports", "reports", FiActivity], ["Notifications", "notifications", FiBell], ["Settings", "settings", FiSettings], ["Help & Support", "help", FiHelpCircle]];
+const nav = [["Dashboard", "dashboard", FiHome], ["Products", "products", FiBox], ["Stock Status", "stock", FiActivity], ["Leads", "leads", FiUsers], ["Quotations", "quotations", FiFileText], ["Company Profile", "company", FiBriefcase], ["Reports", "reports", FiActivity], ["Notifications", "notifications", FiBell], ["Settings", "settings", FiSettings], ["Help & Support", "help", FiHelpCircle]];
 
 export default function SellerLayout() {
   const { user, logout } = useAuth(); const navigate = useNavigate();

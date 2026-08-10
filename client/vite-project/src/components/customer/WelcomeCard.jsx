@@ -46,7 +46,7 @@ export default function WelcomeCard() {
 
           <div>
             <p className="text-sm font-medium text-slate-500">
-              Welcome back 👋
+              Welcome back 
             </p>
 
             <h2 className="mt-1 text-3xl font-bold text-slate-900">

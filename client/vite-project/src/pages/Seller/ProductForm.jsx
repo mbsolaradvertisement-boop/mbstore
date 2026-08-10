@@ -8,7 +8,7 @@ import { apiMessage } from "../../lib/api";
 import { getCompanies } from "../../services/companyService";
 import { useToast } from "../../context/ToastContext";
 
-const empty = { categoryId: "", companyId: "", productName: "", brand: "", description: "", status: "active", attributes: {} };
+const empty = { categoryId: "", companyId: "", productName: "", brand: "", description: "", availability: "in_stock", status: "active", attributes: {} };
 const MAX_IMAGE_BYTES = 200 * 1024;
 const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
@@ -43,7 +43,7 @@ export default function ProductForm() {
     getSellerProduct(id).then(async ({ data }) => {
       const product = data.product;
       await loadFields(product.categoryId);
-      setForm({ categoryId: String(product.categoryId), companyId: String(product.companyId || ""), productName: product.productName, brand: product.brand, description: product.description, status: product.status, attributes: product.attributes || {} });
+      setForm({ categoryId: String(product.categoryId), companyId: String(product.companyId || ""), productName: product.productName, brand: product.brand, description: product.description, availability: product.availability || "in_stock", status: product.status, attributes: product.attributes || {} });
       setExistingImage(product.images?.[0]?.imageUrl || product.imageUrl || "");
     }).catch((error) => toast(apiMessage(error), "error")).finally(() => setLoading(false));
   }, [editing, id, loadFields, toast]);
@@ -91,6 +91,7 @@ export default function ProductForm() {
       <Field label="Category" error={errors.categoryId}><select value={form.categoryId} onChange={(event) => selectCategory(event.target.value)} className="input"><option value="">Select Category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field>
       <Field label="Product Name" error={errors.productName}><input value={form.productName} onChange={(event) => change("productName", event.target.value)} className="input" /></Field>
       <Field label="Brand / Company" error={errors.companyId}><select value={form.companyId} onChange={(event) => { const company=companies.find(item=>String(item.id)===event.target.value); setForm(current=>({...current,companyId:event.target.value,brand:company?.companyName||""})); setErrors(current=>({...current,companyId:""})); }} className="input"><option value="">Select Brand / Company</option>{companies.map(company=><option key={company.id} value={company.id}>{company.companyName}</option>)}</select></Field>
+      <Field label="Stock Availability"><select value={form.availability} onChange={(event) => setForm(current=>({...current,availability:event.target.value}))} className="input"><option value="in_stock">In Stock</option><option value="low_stock">Low Stock</option><option value="out_of_stock">Out of Stock</option></select></Field>
       {editing && <Field label="Status"><select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })} className="input"><option value="active">Active</option><option value="draft">Draft</option><option value="inactive">Inactive</option></select></Field>}
       <div className="sm:col-span-2"><Field label="Product Description" error={errors.description}><textarea rows="5" value={form.description} onChange={(event) => change("description", event.target.value)} className="input" /></Field></div>
     </div></section>

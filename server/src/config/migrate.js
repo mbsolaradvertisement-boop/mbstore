@@ -43,6 +43,9 @@ async function migrate() {
       await connection.query("CREATE INDEX idx_products_company ON products(company_id)");
       await connection.query("UPDATE products p JOIN companies co ON LOWER(co.company_name)=LOWER(p.brand) SET p.company_id=co.id WHERE p.company_id IS NULL");
     }
+    if (!productColumns.some((column) => column.Field === "availability")) {
+      await connection.query("ALTER TABLE products ADD COLUMN availability ENUM('in_stock','low_stock','out_of_stock') NOT NULL DEFAULT 'in_stock' AFTER description");
+    }
 
     // Backfill profiles for accounts created before profile tables existed.
     const [customers] = await connection.query("SELECT id, name, email FROM users u WHERE role='Customer' AND NOT EXISTS (SELECT 1 FROM customer_profiles p WHERE p.user_id=u.id)");

@@ -1,0 +1,11 @@
+import api from "../lib/api";
+export const getSellerNotifications=params=>api.get("/seller/notifications",{params});
+export const markSellerNotificationRead=id=>api.patch(`/seller/notifications/${id}/read`);
+export const markAllSellerNotificationsRead=()=>api.patch("/seller/notifications/read-all");
+export const deleteAllSellerNotifications=()=>api.delete("/seller/notifications");
+export const deleteSelectedSellerNotifications=ids=>api.delete("/seller/notifications/selected",{data:{ids}});
+export const getCustomerNotifications=params=>api.get("/customer/notifications",{params});
+export const markCustomerNotificationRead=id=>api.patch(`/customer/notifications/${id}/read`);
+export const markAllCustomerNotificationsRead=()=>api.patch("/customer/notifications/read-all");
+export const deleteAllCustomerNotifications=()=>api.delete("/customer/notifications");
+export const deleteSelectedCustomerNotifications=ids=>api.delete("/customer/notifications/selected",{data:{ids}});
