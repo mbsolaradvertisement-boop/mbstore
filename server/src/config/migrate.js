@@ -24,6 +24,9 @@ async function migrate() {
     if (!userColumnNames.has("email")) await connection.query("ALTER TABLE users ADD COLUMN email VARCHAR(254) NULL UNIQUE AFTER name");
     if (!userColumnNames.has("email_verified")) await connection.query("ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT FALSE AFTER login_allowed");
     if (userColumnNames.has("phone")) await connection.query("ALTER TABLE users MODIFY COLUMN phone VARCHAR(16) NULL");
+    const roleColumn = userColumns.find((column) => column.Field === "role");
+    if (roleColumn && !roleColumn.Type.includes("Support")) await connection.query("ALTER TABLE users MODIFY COLUMN role ENUM('Admin','Seller','Customer','Support') NOT NULL");
+    if (!userColumnNames.has("gender")) await connection.query("ALTER TABLE users ADD COLUMN gender ENUM('Male','Female','Other') NULL AFTER role");
 
     const [sellerColumns] = await connection.query("SHOW COLUMNS FROM seller_verifications");
     const sellerColumnNames = new Set(sellerColumns.map((column) => column.Field));
@@ -69,6 +72,8 @@ async function migrate() {
       do { sellerId = `MBS-${Math.floor(100000 + Math.random() * 900000)}`; } while ((await connection.execute("SELECT 1 FROM seller_profiles WHERE seller_id=?", [sellerId]))[0].length);
       await connection.execute("INSERT INTO seller_profiles (user_id, seller_id, seller_name, email, company_name, gst, verification_status, profile_completion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [seller.id, sellerId, seller.name, seller.email, seller.business_name || null, seller.gst_number || null, seller.verification_status || (seller.status === "Verified" ? "Verified" : "Pending"), seller.business_name && seller.gst_number ? 42 : 18]);
     }
+    await connection.query(`INSERT IGNORE INTO seller_settings (seller_id) SELECT id FROM users WHERE role='Seller'`);
+    await connection.query(`INSERT IGNORE INTO customer_settings (customer_id) SELECT id FROM users WHERE role='Customer'`);
   } finally {
     connection.release();
   }

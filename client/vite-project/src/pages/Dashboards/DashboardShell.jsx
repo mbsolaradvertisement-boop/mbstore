@@ -10,6 +10,7 @@ import { useAuth } from "../../context/AuthContext";
 const adminNavigation = [
   ["Dashboard", FiGrid, "/admin/dashboard"], ["Company Management", FiShoppingBag, "/admin/companies"],
   ["Seller Management", FiUsers, "/admin/sellers"], ["Customer Management", FiUsers, "/admin/customers"],
+  ["Support Management", FiHelpCircle, "/admin/support"],
   ["Product Management", FiBox], ["Categories", FiLayers, "/admin/categories"], ["Brands", FiTag],
   ["Reports", FiActivity], ["Website CMS", FiSettings], ["Banner Management", FiImage],
   ["Notifications", FiBell], ["Support Tickets", FiHelpCircle], ["Analytics", FiActivity],

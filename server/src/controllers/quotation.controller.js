@@ -96,9 +96,9 @@ exports.create = async (req, res) => {
     `, [product.id, product.seller_id]);
 
     await connection.execute(`
-      INSERT INTO notifications
-        (user_id,type,title,message,entity_type,entity_id)
-      VALUES (?,?,?,?,?,?)
+      INSERT INTO notifications (user_id,type,title,message,entity_type,entity_id)
+      SELECT ?,?,?,?,?,? FROM users u LEFT JOIN seller_settings ss ON ss.seller_id=u.id
+      WHERE u.id=? AND COALESCE(ss.notifications_enabled,TRUE)=TRUE AND COALESCE(ss.quotation_notifications,TRUE)=TRUE
     `, [
       product.seller_id,
       "quotation_request",
@@ -106,6 +106,7 @@ exports.create = async (req, res) => {
       `${req.user.name} requested ${quantity} unit${quantity === 1 ? "" : "s"} of ${product.product_name}.`,
       "quotation",
       result.insertId,
+      product.seller_id,
     ]);
 
     await connection.commit();
@@ -223,11 +224,12 @@ exports.respond = async (req, res) => {
     await connection.execute(`
       INSERT INTO notifications
         (user_id,type,title,message,entity_type,entity_id)
-      SELECT customer_id,'quotation_quoted','Quotation received',
-        CONCAT('The seller sent a quotation for ',product_name_snapshot,'.'),
-        'quotation',id
-      FROM quotation_requests
-      WHERE id=?
+      SELECT q.customer_id,'quotation_quoted','Quotation received',
+        CONCAT('The seller sent a quotation for ',q.product_name_snapshot,'.'),
+        'quotation',q.id
+      FROM quotation_requests q
+      LEFT JOIN customer_settings cs ON cs.customer_id=q.customer_id
+      WHERE q.id=? AND COALESCE(cs.enquiry_notifications,TRUE)=TRUE
     `, [id]);
     await connection.commit();
     res.json({ message: "Quotation sent successfully.", quotation: { id, status: "quoted", pricePerUnit: price, totalPrice } });
@@ -254,11 +256,12 @@ exports.reject = async (req, res) => {
     await connection.execute(`
       INSERT INTO notifications
         (user_id,type,title,message,entity_type,entity_id)
-      SELECT customer_id,'quotation_rejected','Quotation request rejected',
-        CONCAT('The seller rejected your request for ',product_name_snapshot,'.'),
-        'quotation',id
-      FROM quotation_requests
-      WHERE id=?
+      SELECT q.customer_id,'quotation_rejected','Quotation request rejected',
+        CONCAT('The seller rejected your request for ',q.product_name_snapshot,'.'),
+        'quotation',q.id
+      FROM quotation_requests q
+      LEFT JOIN customer_settings cs ON cs.customer_id=q.customer_id
+      WHERE q.id=? AND COALESCE(cs.enquiry_notifications,TRUE)=TRUE
     `, [id]);
     await connection.commit();
     res.json({ message: "Quotation request rejected.", quotation: { id, status: "rejected" } });
@@ -300,7 +303,8 @@ exports.customerDecision = async (req, res) => {
     const accepted = decision === "accepted";
     await connection.execute(`
       INSERT INTO notifications (user_id,type,title,message,entity_type,entity_id)
-      VALUES (?,?,?,?,?,?)
+      SELECT ?,?,?,?,?,? FROM users u LEFT JOIN seller_settings ss ON ss.seller_id=u.id
+      WHERE u.id=? AND COALESCE(ss.notifications_enabled,TRUE)=TRUE AND COALESCE(ss.quotation_notifications,TRUE)=TRUE
     `, [
       quotation.seller_id,
       accepted ? "quotation_accepted" : "quotation_declined",
@@ -308,6 +312,7 @@ exports.customerDecision = async (req, res) => {
       `${quotation.customer_name} ${accepted ? "accepted" : "declined"} quotation ${quotation.quotation_number} for ${quotation.product_name_snapshot}.`,
       "quotation",
       id,
+      quotation.seller_id,
     ]);
 
     await connection.commit();

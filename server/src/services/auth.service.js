@@ -4,7 +4,7 @@ const emailService = require("./email.service");
 const { signSession, signRegistration, verifyToken, hashToken, SESSION_DAYS } = require("../utils/tokens");
 const ApiError = require("../utils/api-error");
 
-const publicUser = ({ id, name, email, role, status, login_allowed, email_verified, created_at }) => ({ id, name, email, role, status, loginAllowed: Boolean(login_allowed), emailVerified: Boolean(email_verified), createdAt: created_at });
+const publicUser = ({ id, name, email, gender, role, status, login_allowed, email_verified, created_at }) => ({ id, name, email, gender, role, status, loginAllowed: Boolean(login_allowed), emailVerified: Boolean(email_verified), createdAt: created_at });
 async function findUserByEmail(email) { const [rows] = await pool.execute("SELECT * FROM users WHERE email = ? LIMIT 1", [otpService.normalize(email)]); return rows[0] || null; }
 async function findUserById(id) { const [rows] = await pool.execute("SELECT * FROM users WHERE id = ? LIMIT 1", [id]); return rows[0] ? publicUser(rows[0]) : null; }
 
@@ -18,6 +18,7 @@ async function startRegistration(name, email) {
 async function sendLoginOtp(email) {
   const user = await findUserByEmail(email);
   if (!user) throw new ApiError(404, "No account found.", "USER_NOT_FOUND");
+  assertCanLogin(user);
   await otpService.issue(user.email, user.name);
   return { email: user.email, expiresIn: 600, resendAfter: 60 };
 }
@@ -80,7 +81,7 @@ async function registerSeller(token, details) {
 
 function assertCanLogin(user) {
   if (!user) throw new ApiError(404, "No account found.", "USER_NOT_FOUND");
-  if (user.status === "Inactive") throw new ApiError(403, "Your account is inactive.", "USER_INACTIVE");
+  if (user.status === "Inactive") throw new ApiError(403, user.role === "Support" ? "Your support account is currently inactive. Please contact the administrator." : "Your account is inactive.", "USER_INACTIVE");
   if (user.role === "Seller" && user.status === "Pending") throw new ApiError(403, "Your seller verification request is under review.", "SELLER_PENDING");
   if (user.role === "Seller" && user.status === "Rejected") throw new ApiError(403, "Your seller application has been rejected. Contact support for more details.", "SELLER_REJECTED");
   if (!user.login_allowed || user.status !== "Verified" || !user.email_verified) throw new ApiError(403, "Login is not allowed for this account.", "LOGIN_DISABLED");

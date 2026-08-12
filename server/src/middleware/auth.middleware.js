@@ -32,5 +32,6 @@ const requireRole = (role) => (req, _res, next) => req.user?.role === role ? nex
 const adminMiddleware = requireRole("Admin");
 const sellerMiddleware = requireRole("Seller");
 const customerMiddleware = requireRole("Customer");
+const supportMiddleware = requireRole("Support");
 const verifiedSellerMiddleware = (req, _res, next) => req.user?.role === "Seller" && req.user.status === "Verified" && req.user.login_allowed ? next() : next(new ApiError(403, "Verified seller access required.", "SELLER_NOT_VERIFIED"));
-module.exports = { authMiddleware, optionalAuthMiddleware, adminMiddleware, sellerMiddleware, customerMiddleware, verifiedSellerMiddleware };
+module.exports = { authMiddleware, optionalAuthMiddleware, adminMiddleware, sellerMiddleware, customerMiddleware, supportMiddleware, verifiedSellerMiddleware };

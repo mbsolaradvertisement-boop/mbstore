@@ -10,6 +10,8 @@ import { getSellerProducts } from "../../services/productService";
 import { useToast } from "../../context/ToastContext";
 import { apiMessage } from "../../lib/api";
 import SellerReports from "../Seller/Reports";
+import SellerSettings from "../Seller/Settings";
+import SellerDashboard from "../Seller/Dashboard";
 
 const card = "rounded-[20px] border border-slate-200 bg-white shadow-[0_4px_24px_rgba(15,23,42,.04)]";
 const statuses = { New:"bg-blue-50 text-blue-700", Contacted:"bg-violet-50 text-violet-700", Quoted:"bg-amber-50 text-amber-700", Won:"bg-emerald-50 text-emerald-700", Lost:"bg-red-50 text-red-700", Active:"bg-emerald-50 text-emerald-700", Draft:"bg-slate-100 text-slate-600", Sent:"bg-blue-50 text-blue-700", Accepted:"bg-emerald-50 text-emerald-700", Expired:"bg-red-50 text-red-700", Available:"bg-emerald-50 text-emerald-700", "Low Stock":"bg-amber-50 text-amber-700", "Out of Stock":"bg-red-50 text-red-700" };
@@ -83,5 +85,5 @@ function LeadRequestPopup({request,onClose}) {
   return <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/50 p-4"><article className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6"><div className="flex justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-violet-600">Customer request</p><h2 className="text-2xl font-black">{request.quotation_number}</h2></div><button onClick={onClose} className="grid size-10 place-items-center rounded-xl bg-slate-100"><FiX/></button></div><dl className="mt-5 grid gap-3 sm:grid-cols-2">{details.map(([label,value])=><div key={label} className="rounded-xl bg-slate-50 p-3"><dt className="text-xs text-slate-400">{label}</dt><dd className="font-bold capitalize">{value}</dd></div>)}</dl><div className="mt-4 rounded-xl border p-4"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Customer requirement</p><p className="mt-2 text-sm leading-6 text-slate-700">{request.customer_message||"No additional information provided."}</p></div></article></div>
 }
 
-const pageMap = { dashboard: SellerHome, products: ProductsPage, stock: LiveStockPage, leads: LiveLeadsPage, quotations: QuotationsPage, company: CompanyPage, reports: SellerReports, notifications: NotificationsPage, settings: SettingsPage, help: HelpPage };
+const pageMap = { dashboard: SellerDashboard, products: ProductsPage, stock: LiveStockPage, leads: LiveLeadsPage, quotations: QuotationsPage, company: CompanyPage, reports: SellerReports, notifications: NotificationsPage, settings: SellerSettings, help: HelpPage };
 export default function SellerPages() { const { section } = useParams(); const Page = pageMap[section]; return Page ? <Page /> : <Navigate to="/seller/dashboard" replace />; }

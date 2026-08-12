@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS users (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
   email VARCHAR(254) NOT NULL UNIQUE,
-  role ENUM('Admin','Seller','Customer') NOT NULL,
+  role ENUM('Admin','Seller','Customer','Support') NOT NULL,
+  gender ENUM('Male','Female','Other') NULL,
   status ENUM('Pending','Verified','Rejected','Inactive') NOT NULL DEFAULT 'Pending',
   login_allowed BOOLEAN NOT NULL DEFAULT FALSE,
   email_verified BOOLEAN NOT NULL DEFAULT FALSE,
@@ -251,6 +252,28 @@ CREATE TABLE IF NOT EXISTS notifications (
   CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_notification_user_created (user_id, created_at),
   INDEX idx_notification_user_read (user_id, read_at)
+);
+
+CREATE TABLE IF NOT EXISTS seller_settings (
+  seller_id BIGINT UNSIGNED PRIMARY KEY,
+  notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  quotation_notifications BOOLEAN NOT NULL DEFAULT TRUE,
+  show_products BOOLEAN NOT NULL DEFAULT TRUE,
+  show_availability BOOLEAN NOT NULL DEFAULT TRUE,
+  email_updates BOOLEAN NOT NULL DEFAULT TRUE,
+  weekly_summary BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_seller_settings_user FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS customer_settings (
+  customer_id BIGINT UNSIGNED PRIMARY KEY,
+  email_notifications BOOLEAN NOT NULL DEFAULT TRUE,
+  enquiry_notifications BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_customer_settings_user FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS wishlists (

@@ -9,7 +9,7 @@ const availabilityStyle={in_stock:["In Stock","bg-emerald-100 text-emerald-700"]
 
 function ProductCard({ product, onDetails, onQuote }) {
   const { user } = useAuth();
-  const [availabilityLabel,availabilityTone]=availabilityStyle[product.availability]||availabilityStyle.in_stock;
+  const [availabilityLabel,availabilityTone]=availabilityStyle[product.availability]||[];
   const openDetails=()=>{
     onDetails?.(product);
     if(user?.role==="Customer")recordCatalogueProductView(product.id).catch(()=>{});
@@ -24,7 +24,7 @@ function ProductCard({ product, onDetails, onQuote }) {
         <span className="truncate">{product.company}</span>
       </span>
       <WishlistButton productId={product.id} className="absolute right-3 top-3 z-20"/>
-      <span className={`absolute bottom-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-black shadow-sm ${availabilityTone}`}>{availabilityLabel}</span>
+      {availabilityLabel&&<span className={`absolute bottom-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-black shadow-sm ${availabilityTone}`}>{availabilityLabel}</span>}
     </div>
     <div className="flex flex-1 flex-col p-2 pt-4">
       <p className="text-[11px] font-extrabold uppercase tracking-wider text-sky-600">{product.category}</p>
