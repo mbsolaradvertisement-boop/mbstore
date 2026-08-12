@@ -208,9 +208,10 @@ CREATE TABLE IF NOT EXISTS quotation_requests (
   quantity INT UNSIGNED NOT NULL,
   customer_message VARCHAR(1000) NULL,
   customer_phone VARCHAR(16) NULL,
-  status ENUM('pending','quoted','rejected') NOT NULL DEFAULT 'pending',
+  status ENUM('pending','quoted','rejected','accepted','declined') NOT NULL DEFAULT 'pending',
   seller_rejection_reason VARCHAR(1000) NULL,
   responded_at TIMESTAMP NULL,
+  customer_decided_at TIMESTAMP NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_quotation_customer FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE RESTRICT,
@@ -250,4 +251,16 @@ CREATE TABLE IF NOT EXISTS notifications (
   CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_notification_user_created (user_id, created_at),
   INDEX idx_notification_user_read (user_id, read_at)
+);
+
+CREATE TABLE IF NOT EXISTS wishlists (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  customer_id BIGINT UNSIGNED NOT NULL,
+  product_id BIGINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_wishlist_customer FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_wishlist_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  UNIQUE KEY uq_wishlist_customer_product (customer_id, product_id),
+  INDEX idx_wishlist_customer (customer_id),
+  INDEX idx_wishlist_product (product_id)
 );

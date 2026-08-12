@@ -13,6 +13,8 @@ const catalogueRoutes = require("./routes/catalogue.routes");
 const quotationRoutes = require("./routes/quotation.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const customerNotificationRoutes = require("./routes/customer-notification.routes");
+const wishlistRoutes = require("./routes/wishlist.routes");
+const reportRoutes = require("./routes/report.routes");
 const { errorHandler, notFound } = require("./middleware/error.middleware");
 
 const app = express();
@@ -34,6 +36,8 @@ app.use("/api/catalogue", catalogueRoutes);
 app.use("/api", quotationRoutes);
 app.use("/api/seller/notifications", notificationRoutes);
 app.use("/api/customer/notifications", customerNotificationRoutes);
+app.use("/api/customer/wishlist", wishlistRoutes);
+app.use("/api/seller/reports", reportRoutes);
 app.use("/api", profileRoutes);
 app.use(notFound);
 app.use(errorHandler);

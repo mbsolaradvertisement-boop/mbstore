@@ -4,9 +4,6 @@ import {
   HiOutlineMagnifyingGlass,
   HiOutlineDocumentText,
   HiOutlineHeart,
-  HiOutlineChatBubbleLeftRight,
-  HiOutlineScale,
-  HiOutlineDocumentArrowDown,
 } from "react-icons/hi2";
 
 const actions = [
@@ -27,24 +24,6 @@ const actions = [
     description: "View your saved products",
     icon: HiOutlineHeart,
     link: "/customer/favorites",
-  },
-  {
-    title: "Compare Products",
-    description: "Compare up to 4 products",
-    icon: HiOutlineScale,
-    link: "/customer/compare",
-  },
-  {
-    title: "Chat with Sellers",
-    description: "Continue your conversations",
-    icon: HiOutlineChatBubbleLeftRight,
-    link: "/customer/chat",
-  },
-  {
-    title: "Datasheets",
-    description: "Download product documents",
-    icon: HiOutlineDocumentArrowDown,
-    link: "/customer/datasheets",
   },
 ];
 

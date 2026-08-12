@@ -4,10 +4,6 @@ import {
   FiHome,
   FiSearch,
   FiHeart,
-  FiShuffle,
-  FiFileText,
-  FiMessageSquare,
-  FiDownload,
   FiClipboard,
   FiBell,
   FiUser,
@@ -32,29 +28,9 @@ const menu = [
     path: "/catalogue",
   },
   {
-    title: "Favorites",
+    title: "Wishlist",
     icon: FiHeart,
-    path: "/customer/favorites",
-  },
-  {
-    title: "Compare Products",
-    icon: FiShuffle,
-    path: "/customer/compare",
-  },
-  {
-    title: "My Enquiries",
-    icon: FiFileText,
-    path: "/customer/enquiries",
-  },
-  {
-    title: "Chat",
-    icon: FiMessageSquare,
-    path: "/customer/chat",
-  },
-  {
-    title: "Datasheets",
-    icon: FiDownload,
-    path: "/customer/datasheets",
+    path: "/customer/wishlist",
   },
   {
     title: "Quotations",
@@ -88,6 +64,7 @@ export default function CustomerSidebar({
   setSidebarOpen,
   collapsed,
   setCollapsed,
+  unreadNotifications,
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -174,13 +151,14 @@ export default function CustomerSidebar({
                     : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
-                <Icon size={20} />
+                <span className="relative shrink-0"><Icon size={20} />{item.path === "/customer/notifications" && unreadNotifications > 0 && collapsed && <span className="absolute -right-2 -top-2 grid min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-4 text-white">{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</span>
 
                 {!collapsed && (
                   <span className="ml-4 font-medium">
                     {item.title}
                   </span>
                 )}
+                {!collapsed && item.path === "/customer/notifications" && unreadNotifications > 0 && <span className="ml-auto grid min-w-6 place-items-center rounded-full bg-red-500 px-1.5 text-xs font-bold leading-6 text-white">{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}
               </Link>
             );
           })}

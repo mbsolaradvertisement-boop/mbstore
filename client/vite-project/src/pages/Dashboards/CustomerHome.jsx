@@ -5,7 +5,6 @@ import StatsCards from "../../components/customer/StatsCards";
 import QuickActions from "../../components/customer/QuickActions";
 import RecentActivity from "../../components/customer/RecentActivity";
 import FeaturedProducts from "../../components/customer/FeaturedProducts";
-import LatestEnquiries from "../../components/customer/LatestEnquiries";
 
 export default function CustomerHome() {
   return (
@@ -21,7 +20,6 @@ export default function CustomerHome() {
 
         <FeaturedProducts />
 
-        <LatestEnquiries />
       </div>
     </CustomerLayout>
   );

@@ -33,11 +33,14 @@ const detailSelect = `
   SELECT q.*, u.name AS customerName, p.category_id AS categoryId,
     c.name AS categoryName, r.price_per_unit AS pricePerUnit,
     r.total_price AS totalPrice, r.delivery_time AS deliveryTime,
-    r.message AS sellerMessage
+    r.message AS sellerMessage, cp.state AS customerState,
+    cp.district AS customerDistrict, cp.area AS customerArea,
+    cp.address AS customerAddress
   FROM quotation_requests q
   JOIN users u ON u.id=q.customer_id
   JOIN products p ON p.id=q.product_id
   JOIN categories c ON c.id=p.category_id
+  LEFT JOIN customer_profiles cp ON cp.user_id=q.customer_id
   LEFT JOIN quotation_responses r ON r.quotation_request_id=q.id
 `;
 
@@ -122,7 +125,7 @@ async function listFor(req, res, ownerColumn) {
   const { page, limit, offset } = pageValues(req.query);
   const conditions = [`q.${ownerColumn}=?`];
   const params = [req.user.id];
-  if (["pending", "quoted", "rejected"].includes(req.query.status)) {
+  if (["pending", "quoted", "rejected", "accepted", "declined"].includes(req.query.status)) {
     conditions.push("q.status=?");
     params.push(req.query.status);
   }
@@ -259,6 +262,59 @@ exports.reject = async (req, res) => {
     `, [id]);
     await connection.commit();
     res.json({ message: "Quotation request rejected.", quotation: { id, status: "rejected" } });
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+exports.customerDecision = async (req, res) => {
+  const id = positiveInteger(req.params.id, "Quotation");
+  const decision = String(req.body.decision || "").trim().toLowerCase();
+  if (!["accepted", "declined"].includes(decision)) {
+    throw new ApiError(400, "Decision must be accepted or declined.", "INVALID_QUOTATION_DECISION");
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.execute(`
+      SELECT q.id,q.seller_id,q.status,q.product_name_snapshot,q.quotation_number,u.name AS customer_name
+      FROM quotation_requests q
+      JOIN users u ON u.id=q.customer_id
+      WHERE q.id=? AND q.customer_id=?
+      FOR UPDATE
+    `, [id, req.user.id]);
+    const quotation = rows[0];
+    if (!quotation) throw new ApiError(404, "Quotation not found.", "QUOTATION_NOT_FOUND");
+    if (quotation.status !== "quoted") {
+      throw new ApiError(409, "This quotation can no longer be accepted or declined.", "QUOTATION_ALREADY_DECIDED");
+    }
+
+    await connection.execute(
+      "UPDATE quotation_requests SET status=?,customer_decided_at=NOW() WHERE id=?",
+      [decision, id]
+    );
+    const accepted = decision === "accepted";
+    await connection.execute(`
+      INSERT INTO notifications (user_id,type,title,message,entity_type,entity_id)
+      VALUES (?,?,?,?,?,?)
+    `, [
+      quotation.seller_id,
+      accepted ? "quotation_accepted" : "quotation_declined",
+      accepted ? "Quotation accepted" : "Quotation declined",
+      `${quotation.customer_name} ${accepted ? "accepted" : "declined"} quotation ${quotation.quotation_number} for ${quotation.product_name_snapshot}.`,
+      "quotation",
+      id,
+    ]);
+
+    await connection.commit();
+    res.json({
+      message: `Quotation ${accepted ? "accepted" : "declined"} successfully.`,
+      quotation: { id, status: decision, customerDecidedAt: new Date().toISOString() },
+    });
   } catch (error) {
     await connection.rollback();
     throw error;

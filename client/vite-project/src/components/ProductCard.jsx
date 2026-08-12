@@ -1,25 +1,14 @@
-import { memo, useState } from "react";
-import { FiArrowRight, FiHeart, FiMessageSquare, FiPackage } from "react-icons/fi";
+import { memo } from "react";
+import { FiArrowRight, FiMessageSquare, FiPackage } from "react-icons/fi";
 import { apiAsset } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { recordCatalogueProductView } from "../services/catalogueService";
+import WishlistButton from "./WishlistButton";
 
-const FAVORITES_KEY="mb-store-favorite-products";
 const availabilityStyle={in_stock:["In Stock","bg-emerald-100 text-emerald-700"],low_stock:["Low Stock","bg-amber-100 text-amber-700"],out_of_stock:["Out of Stock","bg-red-100 text-red-700"]};
-function storedFavorites(){
-  try{return new Set(JSON.parse(localStorage.getItem(FAVORITES_KEY)||"[]").map(String));}catch{return new Set();}
-}
 
 function ProductCard({ product, onDetails, onQuote }) {
   const { user } = useAuth();
-  const [favorite,setFavorite]=useState(()=>storedFavorites().has(String(product.id)));
-  const toggleFavorite=()=>setFavorite(current=>{
-    const next=!current, favorites=storedFavorites(), id=String(product.id);
-    if(next)favorites.add(id);
-    else favorites.delete(id);
-    localStorage.setItem(FAVORITES_KEY,JSON.stringify([...favorites]));
-    return next;
-  });
   const [availabilityLabel,availabilityTone]=availabilityStyle[product.availability]||availabilityStyle.in_stock;
   const openDetails=()=>{
     onDetails?.(product);
@@ -34,7 +23,7 @@ function ProductCard({ product, onDetails, onQuote }) {
         {product.companyLogoUrl && <img src={apiAsset(product.companyLogoUrl)} alt={`${product.company} logo`} className="h-5 w-5 shrink-0 rounded-full bg-white object-contain"/>}
         <span className="truncate">{product.company}</span>
       </span>
-      <button type="button" onClick={toggleFavorite} aria-label={favorite?"Remove from favorites":"Add to favorites"} aria-pressed={favorite} className={`absolute right-3 top-3 z-20 grid size-9 place-items-center rounded-full bg-white text-lg shadow-md transition hover:scale-110 ${favorite?"text-red-600":"text-slate-500 hover:text-red-600"}`}><FiHeart className={favorite?"fill-current":""}/></button>
+      <WishlistButton productId={product.id} className="absolute right-3 top-3 z-20"/>
       <span className={`absolute bottom-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-black shadow-sm ${availabilityTone}`}>{availabilityLabel}</span>
     </div>
     <div className="flex flex-1 flex-col p-2 pt-4">

@@ -8,6 +8,8 @@ const statusTone = {
   pending: "bg-amber-50 text-amber-700",
   quoted: "bg-emerald-50 text-emerald-700",
   rejected: "bg-red-50 text-red-700",
+  accepted: "bg-teal-50 text-teal-700",
+  declined: "bg-rose-50 text-rose-700",
 };
 
 export default function SellerQuotations() {

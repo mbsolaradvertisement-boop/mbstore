@@ -2,6 +2,7 @@ import { useState } from "react";
 import CustomerSidebar from "./CustomerSidebar";
 import CustomerNavbar from "./CustomerNavbar";
 import ProfileCompletionPrompt from "../../components/ProfileCompletionPrompt";
+import useUnreadNotifications from "../../hooks/useUnreadNotifications";
 
 export default function CustomerLayout({
   children,
@@ -9,6 +10,7 @@ export default function CustomerLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const unreadNotifications = useUnreadNotifications("Customer");
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -19,6 +21,7 @@ export default function CustomerLayout({
         setSidebarOpen={setSidebarOpen}
         collapsed={collapsed}
         setCollapsed={setCollapsed}
+        unreadNotifications={unreadNotifications}
       />
 
       {/* Main Content */}
@@ -31,6 +34,7 @@ export default function CustomerLayout({
           title={title}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
+          unreadNotifications={unreadNotifications}
         />
 
         <main className="p-4 sm:p-6 lg:p-8">

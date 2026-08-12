@@ -18,6 +18,7 @@ const CustomerQuotations=lazyPage(()=>import("../pages/Customer/Quotations"));
 const SellerQuotations=lazyPage(()=>import("../pages/Seller/Quotations"));
 const SellerNotifications=lazyPage(()=>import("../pages/Seller/Notifications"));
 const CustomerNotifications=lazyPage(()=>import("../pages/Customer/Notifications"));
+const CustomerWishlist=lazyPage(()=>import("../pages/Customer/Wishlist"));
 
 const dashboardFor = role => role === "Admin" ? "/admin/dashboard" : role === "Seller" ? "/seller/dashboard" : "/customer/home";
 function HomeEntry() { const {user,checking}=useAuth(); if(checking)return <PageLoader/>; return user?<Navigate to={dashboardFor(user.role)} replace/>:<Home/>; }
@@ -26,7 +27,7 @@ function GuestAuthPage({mode}) { const {user,checking}=useAuth(); if(checking)re
 export default function AppRoutes() {
   return <Suspense fallback={<PageLoader/>}><Routes>
     <Route path="/" element={<HomeEntry/>}/><Route path="/catalogue" element={<Catalogue/>}/><Route path="/companies" element={<Companies/>}/><Route path="/login" element={<GuestAuthPage mode="login"/>}/><Route path="/register" element={<GuestAuthPage mode="register"/>}/>
-    <Route element={<ProtectedRoute roles={["Customer"]}/>}> <Route path="/customer/home" element={<CustomerHome/>}/><Route path="/customer/profile" element={<CustomerProfilePage/>}/><Route path="/customer/settings" element={<CustomerSettings/>}/><Route path="/customer/quotations" element={<CustomerQuotations/>}/><Route path="/customer/notifications" element={<CustomerNotifications/>}/></Route>
+    <Route element={<ProtectedRoute roles={["Customer"]}/>}> <Route path="/customer/home" element={<CustomerHome/>}/><Route path="/customer/profile" element={<CustomerProfilePage/>}/><Route path="/customer/settings" element={<CustomerSettings/>}/><Route path="/customer/quotations" element={<CustomerQuotations/>}/><Route path="/customer/notifications" element={<CustomerNotifications/>}/><Route path="/customer/wishlist" element={<CustomerWishlist/>}/></Route>
     <Route element={<ProtectedRoute roles={["Seller"]}/>}> <Route path="/seller" element={<SellerLayout/>}><Route index element={<Navigate to="dashboard" replace/>}/><Route path="profile" element={<SellerProfilePage/>}/><Route path="products" element={<SellerProducts/>}/><Route path="products/new" element={<ProductForm/>}/><Route path="products/:id/edit" element={<ProductForm/>}/><Route path="quotations" element={<SellerQuotations/>}/><Route path="notifications" element={<SellerNotifications/>}/><Route path=":section" element={<SellerPages/>}/></Route></Route>
     <Route element={<ProtectedRoute roles={["Admin"]}/>}> <Route path="/admin/dashboard" element={<AdminDashboard/>}/><Route path="/admin/companies" element={<CompanyManagement/>}/><Route path="/admin/categories" element={<Categories/>}/><Route path="/admin/sellers" element={<ProfileManagement type="sellers"/>}/><Route path="/admin/customers" element={<ProfileManagement type="customers"/>}/></Route>
     <Route path="*" element={<Navigate to="/" replace/>}/>

@@ -8,6 +8,10 @@ export function getCustomerQuotations(params) {
   return api.get("/customer/quotations", { params });
 }
 
+export function decideQuotation(id, decision) {
+  return api.post(`/customer/quotations/${id}/decision`, { decision });
+}
+
 export function getSellerQuotations(params) {
   return api.get("/seller/quotations", { params });
 }

@@ -13,6 +13,7 @@ import {
 export default function CustomerNavbar({
   title,
   setSidebarOpen,
+  unreadNotifications,
 }) {
   const { user } = useAuth();
   const [completion, setCompletion] = useState(null);
@@ -68,11 +69,10 @@ export default function CustomerNavbar({
 
           {/* Notifications */}
 
-          <button className="relative rounded-2xl border border-slate-200 p-3 hover:bg-slate-100">
+          <Link to="/customer/notifications" aria-label={`${unreadNotifications} unread notifications`} className="relative rounded-2xl border border-slate-200 p-3 hover:bg-slate-100">
             <FiBell size={20} />
-
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500"></span>
-          </button>
+            {unreadNotifications > 0 && <span className="absolute -right-2 -top-2 grid min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-5 text-white">{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}
+          </Link>
 
           {/* Profile */}
 

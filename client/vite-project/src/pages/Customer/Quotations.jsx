@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { FiFileText, FiX } from "react-icons/fi";
+import { FiCheck, FiFileText, FiX, FiXCircle } from "react-icons/fi";
 import CustomerLayout from "../../layout/customer/CustomerLayout";
+import { useToast } from "../../context/ToastContext";
 import { apiMessage } from "../../lib/api";
-import { getCustomerQuotations } from "../../services/quotationService";
+import { decideQuotation, getCustomerQuotations } from "../../services/quotationService";
 
 const statusTone = {
   pending: "bg-amber-50 text-amber-700",
   quoted: "bg-emerald-50 text-emerald-700",
   rejected: "bg-red-50 text-red-700",
+  accepted: "bg-teal-50 text-teal-700",
+  declined: "bg-rose-50 text-rose-700",
 };
 
 function money(value) {
@@ -18,10 +21,31 @@ function money(value) {
 }
 
 export default function CustomerQuotations() {
+  const { toast } = useToast();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
+  const [decision, setDecision] = useState(null);
+  const [savingDecision, setSavingDecision] = useState(false);
+
+  async function confirmDecision() {
+    if (!selected || !decision) return;
+    setSavingDecision(true);
+    try {
+      const { data } = await decideQuotation(selected.id, decision);
+      const customer_decided_at = data.quotation.customerDecidedAt;
+      const updated = { ...selected, status: decision, customer_decided_at };
+      setRows((current) => current.map((row) => row.id === selected.id ? updated : row));
+      setSelected(updated);
+      setDecision(null);
+      toast(data.message);
+    } catch (requestError) {
+      toast(apiMessage(requestError), "error");
+    } finally {
+      setSavingDecision(false);
+    }
+  }
 
   useEffect(() => {
     getCustomerQuotations()
@@ -56,13 +80,14 @@ export default function CustomerQuotations() {
           </div>
         )}
 
-        {selected && <QuotationDetails quotation={selected} onClose={() => setSelected(null)} />}
+        {selected && <QuotationDetails quotation={selected} onClose={() => setSelected(null)} onDecision={setDecision} />}
+        {decision && <DecisionDialog decision={decision} saving={savingDecision} onCancel={() => setDecision(null)} onConfirm={confirmDecision} />}
       </section>
     </CustomerLayout>
   );
 }
 
-function QuotationDetails({ quotation, onClose }) {
+function QuotationDetails({ quotation, onClose, onDecision }) {
   const details = [
     ["Product", quotation.product_name_snapshot],
     ["Seller", quotation.seller_company_snapshot],
@@ -80,7 +105,24 @@ function QuotationDetails({ quotation, onClose }) {
           {details.map(([label, value]) => <div key={label} className="rounded-xl bg-slate-50 p-3"><dt className="text-xs text-slate-400">{label}</dt><dd className="font-bold capitalize">{value}</dd></div>)}
         </dl>
         {quotation.status === "quoted" && <section className="mt-5 rounded-2xl bg-emerald-50 p-4"><h3 className="font-black">Seller Quotation</h3><p>Price per unit: <b>{money(quotation.pricePerUnit)}</b></p><p>Total: <b>{money(quotation.totalPrice)}</b></p><p>Delivery: <b>{quotation.deliveryTime}</b></p><p>{quotation.sellerMessage}</p></section>}
+        {quotation.status === "quoted" && <div className="mt-6 flex flex-wrap justify-end gap-3"><button onClick={() => onDecision("declined")} className="flex items-center gap-2 rounded-xl border border-red-200 px-5 py-3 font-bold text-red-700"><FiXCircle />Disagree</button><button onClick={() => onDecision("accepted")} className="flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-3 font-bold text-white"><FiCheck />Agree</button></div>}
+        {quotation.status === "accepted" && <p className="mt-5 rounded-xl bg-teal-50 p-4 font-bold text-teal-700">You agreed to this quotation.</p>}
+        {quotation.status === "declined" && <p className="mt-5 rounded-xl bg-red-50 p-4 font-bold text-red-700">You disagreed with this quotation.</p>}
         {quotation.status === "rejected" && <p className="mt-5 rounded-xl bg-red-50 p-4 text-red-700">Reason: {quotation.seller_rejection_reason}</p>}
+      </article>
+    </div>
+  );
+}
+
+function DecisionDialog({ decision, saving, onCancel, onConfirm }) {
+  const agreeing = decision === "accepted";
+  return (
+    <div className="fixed inset-0 z-[110] grid place-items-center bg-slate-950/60 p-4">
+      <article className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+        <div className={`grid size-12 place-items-center rounded-2xl ${agreeing ? "bg-teal-50 text-teal-700" : "bg-red-50 text-red-700"}`}>{agreeing ? <FiCheck /> : <FiXCircle />}</div>
+        <h2 className="mt-5 text-2xl font-black">{agreeing ? "Agree to quotation?" : "Disagree with quotation?"}</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Your decision will be saved and the seller will receive a notification immediately.</p>
+        <div className="mt-6 flex justify-end gap-3"><button disabled={saving} onClick={onCancel} className="rounded-xl border px-5 py-3 font-bold">Cancel</button><button disabled={saving} onClick={onConfirm} className={`rounded-xl px-5 py-3 font-bold text-white disabled:opacity-60 ${agreeing ? "bg-teal-700" : "bg-red-600"}`}>{saving ? "Saving..." : agreeing ? "Yes, Agree" : "Yes, Disagree"}</button></div>
       </article>
     </div>
   );

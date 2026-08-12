@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import {
   HiOutlineBuildingOffice2,
   HiOutlineMagnifyingGlass,
-  HiOutlineDocumentText,
   HiOutlineHeart,
   HiOutlineClock,
 } from "react-icons/hi2";
@@ -15,12 +14,6 @@ export default function WelcomeCard() {
       icon: HiOutlineMagnifyingGlass,
       link: "/catalogue",
       color: "bg-teal-600 hover:bg-teal-700",
-    },
-    {
-      title: "My Enquiries",
-      icon: HiOutlineDocumentText,
-      link: "/customer/enquiries",
-      color: "bg-slate-800 hover:bg-slate-900",
     },
     {
       title: "Favorites",
@@ -74,7 +67,7 @@ export default function WelcomeCard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto">
           {quickActions.map((action) => {
             const Icon = action.icon;
 

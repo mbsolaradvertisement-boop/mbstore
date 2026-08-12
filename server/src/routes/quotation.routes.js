@@ -6,6 +6,7 @@ const { authMiddleware, customerMiddleware, sellerMiddleware } = require("../mid
 router.post("/quotations", authMiddleware, customerMiddleware, asyncHandler(controller.create));
 router.get("/customer/quotations", authMiddleware, customerMiddleware, asyncHandler(controller.customerList));
 router.get("/customer/quotations/:id", authMiddleware, customerMiddleware, asyncHandler(controller.customerDetail));
+router.post("/customer/quotations/:id/decision", authMiddleware, customerMiddleware, asyncHandler(controller.customerDecision));
 router.get("/seller/quotations", authMiddleware, sellerMiddleware, asyncHandler(controller.sellerList));
 router.get("/seller/quotations/:id", authMiddleware, sellerMiddleware, asyncHandler(controller.sellerDetail));
 router.post("/seller/quotations/:id/respond", authMiddleware, sellerMiddleware, asyncHandler(controller.respond));

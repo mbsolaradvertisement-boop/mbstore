@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Navigate, useParams } from "react-router-dom";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { FiArrowRight, FiBell, FiBox, FiCheckCircle, FiDownload, FiEdit2, FiEye, FiFileText, FiFilter, FiHelpCircle, FiImage, FiMail, FiMessageCircle, FiMoreHorizontal, FiPaperclip, FiPlus, FiSearch, FiSend, FiTrash2, FiUpload, FiUsers, FiX } from "react-icons/fi";
 import { enquiries, monthlyData, notices, quotations, sellerLeads, sellerProducts } from "../../data/sellerData";
 import { ProfileContent } from "../Profiles/ProfilePage";
+import { getSellerQuotations } from "../../services/quotationService";
+import { getSellerProducts } from "../../services/productService";
+import { useToast } from "../../context/ToastContext";
+import { apiMessage } from "../../lib/api";
+import SellerReports from "../Seller/Reports";
 
 const card = "rounded-[20px] border border-slate-200 bg-white shadow-[0_4px_24px_rgba(15,23,42,.04)]";
-const statuses = { New:"bg-blue-50 text-blue-700", Contacted:"bg-violet-50 text-violet-700", Quoted:"bg-amber-50 text-amber-700", Won:"bg-emerald-50 text-emerald-700", Lost:"bg-red-50 text-red-700", Active:"bg-emerald-50 text-emerald-700", Draft:"bg-slate-100 text-slate-600", Sent:"bg-blue-50 text-blue-700", Accepted:"bg-emerald-50 text-emerald-700", Expired:"bg-red-50 text-red-700" };
+const statuses = { New:"bg-blue-50 text-blue-700", Contacted:"bg-violet-50 text-violet-700", Quoted:"bg-amber-50 text-amber-700", Won:"bg-emerald-50 text-emerald-700", Lost:"bg-red-50 text-red-700", Active:"bg-emerald-50 text-emerald-700", Draft:"bg-slate-100 text-slate-600", Sent:"bg-blue-50 text-blue-700", Accepted:"bg-emerald-50 text-emerald-700", Expired:"bg-red-50 text-red-700", Available:"bg-emerald-50 text-emerald-700", "Low Stock":"bg-amber-50 text-amber-700", "Out of Stock":"bg-red-50 text-red-700" };
 const Status = ({children}) => <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${statuses[children] || "bg-amber-50 text-amber-700"}`}>{children}</span>;
 const Head = ({title, subtitle, actions}) => <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-2xl font-black tracking-tight text-slate-900">{title}</h1><p className="mt-1 text-sm text-slate-500">{subtitle}</p></div>{actions && <div className="flex flex-wrap gap-2">{actions}</div>}</div>;
 const Button = ({children, secondary=false, ...props}) => <button {...props} className={`${secondary ? "border border-slate-200 bg-white text-slate-700" : "bg-teal-700 text-white"} inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition hover:-translate-y-0.5 hover:shadow-md`}>{children}</button>;
@@ -41,5 +46,42 @@ export function NotificationsPage(){const [items,setItems]=useState(notices); re
 export function SettingsPage(){const [tab,setTab]=useState("Profile"); return <><Head title="Settings" subtitle="Manage your seller workspace preferences."/><section className={`${card} overflow-hidden`}><div className="flex overflow-x-auto border-b border-slate-200 px-4">{["Profile","Security","Notification Preferences","Appearance","Account"].map(x=><button onClick={()=>setTab(x)} className={`whitespace-nowrap border-b-2 px-4 py-4 text-sm font-bold ${tab===x?"border-teal-700 text-teal-700":"border-transparent text-slate-400"}`} key={x}>{x}</button>)}</div><div className="max-w-2xl p-6"><h2 className="text-lg font-black">{tab}</h2><p className="mt-1 text-sm text-slate-500">Update your {tab.toLowerCase()} preferences.</p><div className="mt-6 space-y-4">{["Display name","Contact email","Phone number"].map(x=><label className="block text-sm font-semibold" key={x}>{x}<input className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" defaultValue={x==="Display name"?"Apex Solar Solutions":""}/></label>)}<Button>Save changes</Button></div></div></section></> }
 export function HelpPage(){return <><Head title="Help & Support" subtitle="Find answers or contact the MB Store support team."/><section className="rounded-[20px] bg-teal-800 p-8 text-center text-white"><FiHelpCircle className="mx-auto text-4xl"/><h2 className="mt-4 text-2xl font-black">How can we help?</h2><div className="mx-auto mt-5 max-w-xl"><Search value="" onChange={()=>{}} placeholder="Search help articles..."/></div></section><div className="mt-6 grid gap-4 md:grid-cols-3">{[[FiBox,"Product listings","Manage products, images and approval status."],[FiUsers,"Leads & enquiries","Learn how to respond and create quotations."],[FiMail,"Contact support","Email support@mbstore.in for assistance."]].map(([Icon,title,text])=><article className={`${card} p-6`} key={title}><Icon className="text-2xl text-teal-700"/><h3 className="mt-4 font-black">{title}</h3><p className="mt-2 text-sm text-slate-500">{text}</p></article>)}</div></> }
 
-const pageMap = { dashboard: SellerHome, products: ProductsPage, stock: StockPage, leads: LeadsPage, quotations: QuotationsPage, company: CompanyPage, reports: ReportsPage, notifications: NotificationsPage, settings: SettingsPage, help: HelpPage };
+function LiveStockPage(){
+  const {toast}=useToast();
+  const [products,setProducts]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [search,setSearch]=useState("");
+  const [availability,setAvailability]=useState("all");
+  useEffect(()=>{let active=true;getSellerProducts({limit:100,sort:"az"}).then(({data})=>{if(active)setProducts(data.data)}).catch(error=>toast(apiMessage(error),"error")).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[toast]);
+  const counts={available:products.filter(x=>x.availability==="in_stock").length,low:products.filter(x=>x.availability==="low_stock").length,out:products.filter(x=>x.availability==="out_of_stock").length};
+  const query=search.trim().toLowerCase();
+  const rows=products.filter(x=>(!query||x.productName.toLowerCase().includes(query))&&(availability==="all"||x.availability===availability));
+  const summary=[["Available",counts.available,"text-emerald-700"],["Low Stock",counts.low,"text-amber-700"],["Out of Stock",counts.out,"text-red-700"]];
+  const labels={in_stock:"Available",low_stock:"Low Stock",out_of_stock:"Out of Stock"};
+  return <><Head title="Stock Status" subtitle="Monitor inventory availability for customer enquiries."/><div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">{summary.map(x=><div className={`${card} p-5`} key={x[0]}><p className="text-sm text-slate-500">{x[0]}</p><strong className={`mt-2 block text-3xl ${x[2]}`}>{x[1]}</strong></div>)}</div><div className="mb-4 flex flex-wrap gap-3"><Search value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search product name..."/><select value={availability} onChange={e=>setAvailability(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 outline-teal-600"><option value="all">All availability</option><option value="in_stock">Available / High Stock</option><option value="low_stock">Low Stock</option><option value="out_of_stock">Out of Stock</option></select></div>{loading?<section className={`${card} h-64 animate-pulse`}/>:<section className={`${card} overflow-hidden`}><div className="overflow-x-auto"><table className="w-full min-w-160 text-left text-sm"><thead className="bg-slate-50"><tr>{["Product Name","Category","Brand","Availability"].map(x=><th className="px-5 py-3" key={x}>{x}</th>)}</tr></thead><tbody>{rows.map(x=><tr className="border-t border-slate-100" key={x.id}><td className="px-5 py-4 font-bold">{x.productName}</td><td className="px-5">{x.categoryName}</td><td className="px-5">{x.brand}</td><td className="px-5"><Status>{labels[x.availability]}</Status></td></tr>)}</tbody></table></div>{!rows.length&&<div className="grid min-h-40 place-items-center border-t border-slate-100 text-sm font-bold text-slate-500">No products match these filters</div>}</section>}</>
+}
+
+function LiveLeadsPage(){
+  const {toast}=useToast();
+  const [q,setQ]=useState("");
+  const [requests,setRequests]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [selected,setSelected]=useState(null);
+  useEffect(()=>{let active=true;getSellerQuotations({limit:100}).then(({data})=>{if(active)setRequests(data.data)}).catch(error=>toast(apiMessage(error),"error")).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[toast]);
+  const query=q.trim().toLowerCase();
+  const rows=requests.filter(x=>!query||`${x.quotation_number} ${x.customerName} ${x.product_name_snapshot}`.toLowerCase().includes(query));
+  return <><Head title="Lead Management" subtitle="Track requirements and move opportunities through your sales pipeline."/><div className="mb-4 flex flex-wrap gap-3"><Search value={q} onChange={e=>setQ(e.target.value)} placeholder="Search lead, customer, product..."/><Button secondary><FiFilter/>Status · Date</Button></div>{loading?<section className={`${card} h-72 animate-pulse`}/>:<QuotationLeadsTable rows={rows} onView={setSelected}/>} {selected&&<LeadRequestPopup request={selected} onClose={()=>setSelected(null)}/>}</>
+}
+
+function QuotationLeadsTable({rows,onView}) {
+  return <section className={`${card} overflow-hidden`}><div className="border-b border-slate-100 p-5"><h2 className="font-black">All Leads</h2></div><div className="overflow-x-auto"><table className="w-full min-w-210 text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-400"><tr>{["Lead ID","Customer","Product","Location","Date","Status","Actions"].map(x=><th key={x} className="px-4 py-3">{x}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{rows.map(x=><tr key={x.id}><td className="px-4 py-4 font-mono text-xs">{x.quotation_number}</td><td className="px-4"><b>{x.customerName}</b><small className="block text-slate-400">{x.customer_phone||"Phone not provided"}</small></td><td className="max-w-48 truncate px-4">{x.product_name_snapshot}</td><td className="px-4 text-slate-500">{[x.customerArea,x.customerDistrict,x.customerState].filter(Boolean).join(", ")||"Not provided"}</td><td className="px-4 text-slate-500">{new Date(x.created_at).toLocaleDateString("en-IN")}</td><td className="px-4"><Status>{x.status.charAt(0).toUpperCase()+x.status.slice(1)}</Status></td><td className="px-4"><button title="View" onClick={()=>onView(x)} className="text-slate-500"><FiEye/></button></td></tr>)}</tbody></table></div>{!rows.length&&<div className="grid min-h-48 place-items-center border-t border-slate-100 text-sm font-bold text-slate-500">No quotation requests found</div>}</section>
+}
+
+function LeadRequestPopup({request,onClose}) {
+  const location=[request.customerAddress,request.customerArea,request.customerDistrict,request.customerState].filter(Boolean).join(", ")||"Not provided";
+  const details=[["Customer",request.customerName],["Mobile",request.customer_phone||"Not provided"],["Product",request.product_name_snapshot],["Brand",request.brand_snapshot],["Category",request.categoryName],["Quantity",`${request.quantity} units`],["Location",location],["Requested",new Date(request.created_at).toLocaleString("en-IN")],["Status",request.status]];
+  return <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/50 p-4"><article className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6"><div className="flex justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-violet-600">Customer request</p><h2 className="text-2xl font-black">{request.quotation_number}</h2></div><button onClick={onClose} className="grid size-10 place-items-center rounded-xl bg-slate-100"><FiX/></button></div><dl className="mt-5 grid gap-3 sm:grid-cols-2">{details.map(([label,value])=><div key={label} className="rounded-xl bg-slate-50 p-3"><dt className="text-xs text-slate-400">{label}</dt><dd className="font-bold capitalize">{value}</dd></div>)}</dl><div className="mt-4 rounded-xl border p-4"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Customer requirement</p><p className="mt-2 text-sm leading-6 text-slate-700">{request.customer_message||"No additional information provided."}</p></div></article></div>
+}
+
+const pageMap = { dashboard: SellerHome, products: ProductsPage, stock: LiveStockPage, leads: LiveLeadsPage, quotations: QuotationsPage, company: CompanyPage, reports: SellerReports, notifications: NotificationsPage, settings: SettingsPage, help: HelpPage };
 export default function SellerPages() { const { section } = useParams(); const Page = pageMap[section]; return Page ? <Page /> : <Navigate to="/seller/dashboard" replace />; }

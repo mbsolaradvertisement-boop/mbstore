@@ -47,6 +47,15 @@ async function migrate() {
       await connection.query("ALTER TABLE products ADD COLUMN availability ENUM('in_stock','low_stock','out_of_stock') NOT NULL DEFAULT 'in_stock' AFTER description");
     }
 
+    const [quotationColumns] = await connection.query("SHOW COLUMNS FROM quotation_requests");
+    const quotationStatus = quotationColumns.find((column) => column.Field === "status");
+    if (quotationStatus && (!quotationStatus.Type.includes("accepted") || !quotationStatus.Type.includes("declined"))) {
+      await connection.query("ALTER TABLE quotation_requests MODIFY COLUMN status ENUM('pending','quoted','rejected','accepted','declined') NOT NULL DEFAULT 'pending'");
+    }
+    if (!quotationColumns.some((column) => column.Field === "customer_decided_at")) {
+      await connection.query("ALTER TABLE quotation_requests ADD COLUMN customer_decided_at TIMESTAMP NULL AFTER responded_at");
+    }
+
     // Backfill profiles for accounts created before profile tables existed.
     const [customers] = await connection.query("SELECT id, name, email FROM users u WHERE role='Customer' AND NOT EXISTS (SELECT 1 FROM customer_profiles p WHERE p.user_id=u.id)");
     for (const customer of customers) {
