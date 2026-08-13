@@ -197,6 +197,20 @@ CREATE TABLE IF NOT EXISTS product_documents (
   INDEX idx_product_documents_product (product_id)
 );
 
+CREATE TABLE IF NOT EXISTS customer_product_views (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  customer_id BIGINT UNSIGNED NOT NULL,
+  product_id BIGINT UNSIGNED NOT NULL,
+  view_count INT UNSIGNED NOT NULL DEFAULT 1,
+  first_viewed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_viewed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_customer_view_customer FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_customer_view_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  UNIQUE KEY uq_customer_product_view (customer_id, product_id),
+  INDEX idx_customer_views_recent (customer_id, last_viewed_at),
+  INDEX idx_customer_views_product (product_id)
+);
+
 CREATE TABLE IF NOT EXISTS quotation_requests (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   quotation_number VARCHAR(32) NOT NULL UNIQUE,
@@ -286,4 +300,59 @@ CREATE TABLE IF NOT EXISTS wishlists (
   UNIQUE KEY uq_wishlist_customer_product (customer_id, product_id),
   INDEX idx_wishlist_customer (customer_id),
   INDEX idx_wishlist_product (product_id)
+);
+
+CREATE TABLE IF NOT EXISTS support_profiles (
+  user_id BIGINT UNSIGNED PRIMARY KEY,
+  support_id VARCHAR(32) NOT NULL UNIQUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_support_profile_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS support_tickets (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  ticket_number VARCHAR(32) NOT NULL UNIQUE,
+  created_by_type ENUM('Customer','Seller','Support','Admin') NOT NULL,
+  created_by_id BIGINT UNSIGNED NOT NULL,
+  customer_id BIGINT UNSIGNED NULL, seller_id BIGINT UNSIGNED NULL, support_id BIGINT UNSIGNED NULL,
+  subject VARCHAR(180) NOT NULL, description TEXT NOT NULL,
+  category ENUM('Login / Account','Profile','Product','Catalogue','Quotation','Enquiry','Chat','Seller Issue','Customer Issue','Technical Issue','Notification','Other') NOT NULL,
+  priority ENUM('Low','Medium','High','Critical') NOT NULL DEFAULT 'Medium',
+  status ENUM('New','Assigned','In Progress','Waiting for Customer','Waiting for Seller','Resolved','Closed') NOT NULL DEFAULT 'New',
+  related_product_id BIGINT UNSIGNED NULL, related_quotation_id BIGINT UNSIGNED NULL, related_enquiry_id BIGINT UNSIGNED NULL, related_chat_id BIGINT UNSIGNED NULL,
+  assigned_at TIMESTAMP NULL, first_response_at TIMESTAMP NULL, resolved_at TIMESTAMP NULL, closed_at TIMESTAMP NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ticket_creator FOREIGN KEY (created_by_id) REFERENCES users(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_ticket_customer FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_ticket_seller FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_ticket_support FOREIGN KEY (support_id) REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_ticket_product FOREIGN KEY (related_product_id) REFERENCES products(id) ON DELETE SET NULL,
+  CONSTRAINT fk_ticket_quotation FOREIGN KEY (related_quotation_id) REFERENCES quotation_requests(id) ON DELETE SET NULL,
+  INDEX idx_ticket_customer (customer_id,created_at), INDEX idx_ticket_seller (seller_id,created_at), INDEX idx_ticket_support (support_id,status),
+  INDEX idx_ticket_status_priority (status,priority), INDEX idx_ticket_created (created_at)
+);
+
+CREATE TABLE IF NOT EXISTS support_ticket_messages (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, ticket_id BIGINT UNSIGNED NOT NULL,
+  sender_type ENUM('Customer','Seller','Support','Admin') NOT NULL, sender_id BIGINT UNSIGNED NOT NULL,
+  audience ENUM('All','Customer','Seller') NOT NULL DEFAULT 'All', message VARCHAR(2000) NOT NULL, attachment VARCHAR(1000) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ticket_message_ticket FOREIGN KEY (ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE,
+  CONSTRAINT fk_ticket_message_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE RESTRICT, INDEX idx_ticket_messages (ticket_id,created_at)
+);
+
+CREATE TABLE IF NOT EXISTS support_ticket_internal_notes (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, ticket_id BIGINT UNSIGNED NOT NULL, support_id BIGINT UNSIGNED NOT NULL,
+  note VARCHAR(2000) NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ticket_note_ticket FOREIGN KEY (ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE,
+  CONSTRAINT fk_ticket_note_support FOREIGN KEY (support_id) REFERENCES users(id) ON DELETE RESTRICT, INDEX idx_ticket_notes (ticket_id,created_at)
+);
+
+CREATE TABLE IF NOT EXISTS support_follow_ups (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, ticket_id BIGINT UNSIGNED NOT NULL, support_id BIGINT UNSIGNED NOT NULL,
+  follow_up_at DATETIME NOT NULL, reason VARCHAR(500) NOT NULL, status ENUM('Pending','Completed','Missed','Cancelled') NOT NULL DEFAULT 'Pending',
+  notes VARCHAR(1000) NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_followup_ticket FOREIGN KEY (ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE,
+  CONSTRAINT fk_followup_support FOREIGN KEY (support_id) REFERENCES users(id) ON DELETE RESTRICT,
+  INDEX idx_followup_support_date (support_id,follow_up_at), INDEX idx_followup_status (status)
 );

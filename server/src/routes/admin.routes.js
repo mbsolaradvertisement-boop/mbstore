@@ -12,6 +12,7 @@ router.get("/seller-requests", asyncHandler(controller.requests));
 router.get("/sellers", asyncHandler(controller.sellers));
 router.get("/customers", asyncHandler(controller.customers));
 router.get("/support", asyncHandler(supportController.list));
+router.get("/support-analytics", asyncHandler(supportController.analytics));
 router.post("/support", supportController.validation, validate, asyncHandler(supportController.create));
 router.get("/support/:id", param("id").isInt({min:1}), validate, asyncHandler(supportController.one));
 router.put("/support/:id", [param("id").isInt({min:1}), ...supportController.validation], validate, asyncHandler(supportController.update));

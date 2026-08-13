@@ -7,7 +7,7 @@ import {
 } from "react-icons/hi2";
 import { motion } from "framer-motion";
 
-export default function WelcomeCard() {
+export default function WelcomeCard({customer,loading=false}) {
   const quickActions = [
     {
       title: "Browse Products",
@@ -18,7 +18,7 @@ export default function WelcomeCard() {
     {
       title: "Favorites",
       icon: HiOutlineHeart,
-      link: "/customer/favorites",
+      link: "/customer/wishlist",
       color: "bg-white border border-slate-200 hover:bg-slate-100 text-slate-700",
     },
   ];
@@ -43,7 +43,7 @@ export default function WelcomeCard() {
             </p>
 
             <h2 className="mt-1 text-3xl font-bold text-slate-900">
-              Customer Name
+              {loading?"Loading...":customer?.name||"Customer"}
             </h2>
 
             <p className="mt-3 max-w-xl text-slate-600 leading-7">
@@ -55,12 +55,12 @@ export default function WelcomeCard() {
             <div className="mt-5 flex flex-wrap gap-6 text-sm text-slate-500">
               <div className="flex items-center gap-2">
                 <HiOutlineClock className="text-teal-600" />
-                Member Since Jan 2026
+                Member since {customer?.memberSince?new Date(customer.memberSince).toLocaleDateString("en-IN",{month:"short",year:"numeric"}):"—"}
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
-                Active Account
+                {customer?.status||"Active"} Account
               </div>
             </div>
           </div>

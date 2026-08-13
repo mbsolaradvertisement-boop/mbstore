@@ -53,9 +53,9 @@ const menu = [
     path: "/customer/settings",
   },
   {
-    title: "Help",
+    title: "Support Tickets",
     icon: FiHelpCircle,
-    path: "/customer/help",
+    path: "/customer/support",
   },
 ];
 

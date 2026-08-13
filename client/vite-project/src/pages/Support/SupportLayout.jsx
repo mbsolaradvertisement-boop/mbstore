@@ -1,17 +1,22 @@
 import { useState } from "react";
-import { FiBell, FiChevronDown, FiChevronLeft, FiChevronRight, FiClipboard, FiGrid, FiHelpCircle, FiLogOut, FiMenu, FiMessageCircle, FiSearch, FiSettings, FiUser, FiUsers, FiX } from "react-icons/fi";
+import { FiBell, FiChevronDown, FiChevronLeft, FiChevronRight, FiClipboard, FiGrid, FiLogOut, FiMenu, FiMessageCircle, FiSearch, FiUser, FiUsers, FiX,FiBriefcase,FiFileText,FiClock,FiAlertTriangle,FiCheckCircle } from "react-icons/fi";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 const navigation = [
   ["Dashboard", FiGrid, "/support/dashboard"],
-  ["Customer Enquiries", FiUsers, null],
-  ["Seller Enquiries", FiMessageCircle, null],
-  ["Support Tickets", FiClipboard, null],
-  ["Notifications", FiBell, null],
+  ["All Tickets", FiClipboard, "/support/tickets"],
+  ["My Tickets", FiUser, "/support/tickets/my"],
+  ["Unassigned", FiClock, "/support/tickets/unassigned"],
+  ["High Priority", FiAlertTriangle, "/support/tickets/high-priority"],
+  ["Resolved", FiCheckCircle, "/support/tickets/resolved"],
+  ["Customer Support", FiUsers, "/support/customers"],
+  ["Seller Support", FiBriefcase, "/support/sellers"],
+  ["Quotations", FiFileText, "/support/quotations"],
+  ["Conversations", FiMessageCircle, "/support/conversations"],
+  ["Follow-ups", FiClock, "/support/follow-ups"],
+  ["Notifications", FiBell, "/support/notifications"],
   ["Profile", FiUser, "/support/profile"],
-  ["Settings", FiSettings, null],
-  ["Help", FiHelpCircle, null],
 ];
 
 export default function SupportLayout() {

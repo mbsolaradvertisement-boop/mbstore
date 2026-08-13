@@ -8,7 +8,7 @@ import api from "../../lib/api";
 import ProfileProgressBadge from "../../components/ProfileProgressBadge";
 import useUnreadNotifications from "../../hooks/useUnreadNotifications";
 
-const nav = [["Dashboard", "dashboard", FiHome], ["Products", "products", FiBox], ["Stock Status", "stock", FiActivity], ["Leads", "leads", FiUsers], ["Quotations", "quotations", FiFileText], ["Company Profile", "company", FiBriefcase], ["Reports", "reports", FiActivity], ["Notifications", "notifications", FiBell], ["Settings", "settings", FiSettings], ["Help & Support", "help", FiHelpCircle]];
+const nav = [["Dashboard", "dashboard", FiHome], ["Products", "products", FiBox], ["Stock Status", "stock", FiActivity], ["Leads", "leads", FiUsers], ["Quotations", "quotations", FiFileText], ["Company Profile", "company", FiBriefcase], ["Reports", "reports", FiActivity], ["Notifications", "notifications", FiBell], ["Settings", "settings", FiSettings], ["Support Tickets", "support", FiHelpCircle]];
 
 export default function SellerLayout() {
   const { user, logout } = useAuth(); const navigate = useNavigate();

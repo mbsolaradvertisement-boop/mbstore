@@ -45,14 +45,28 @@ exports.recordView = async (req, res) => {
     throw new ApiError(400, "Invalid product ID.", "INVALID_PRODUCT_ID");
   }
 
-  const [result] = await pool.execute(`
-    UPDATE products
-    SET views = views + 1
-    WHERE id = ? AND status = 'active' AND NOT EXISTS (SELECT 1 FROM seller_settings ss WHERE ss.seller_id=products.seller_id AND ss.show_products=FALSE)
-  `, [productId]);
+  const connection = await pool.getConnection();
+  let result;
+  try {
+    await connection.beginTransaction();
+    [result] = await connection.execute(`
+      UPDATE products
+      SET views = views + 1
+      WHERE id = ? AND status = 'active' AND NOT EXISTS (SELECT 1 FROM seller_settings ss WHERE ss.seller_id=products.seller_id AND ss.show_products=FALSE)
+    `, [productId]);
 
-  if (!result.affectedRows) {
-    throw new ApiError(404, "Product not found.", "PRODUCT_NOT_FOUND");
+    if (!result.affectedRows) throw new ApiError(404, "Product not found.", "PRODUCT_NOT_FOUND");
+    await connection.execute(`
+      INSERT INTO customer_product_views (customer_id,product_id)
+      VALUES (?,?)
+      ON DUPLICATE KEY UPDATE view_count=view_count+1,last_viewed_at=CURRENT_TIMESTAMP
+    `, [req.user.id, productId]);
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
   }
 
   const [[product]] = await pool.execute(

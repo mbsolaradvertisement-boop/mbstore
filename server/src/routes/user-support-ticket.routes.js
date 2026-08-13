@@ -1,0 +1,3 @@
+const router=require('express').Router(),c=require('../controllers/user-support-ticket.controller'),asyncHandler=require('../utils/async-handler');const {authMiddleware}=require('../middleware/auth.middleware');const ApiError=require('../utils/api-error');
+router.use(authMiddleware,(req,_res,next)=>['Customer','Seller'].includes(req.user.role)?next():next(new ApiError(403,'Unauthorized.','UNAUTHORIZED')));
+router.get('/',asyncHandler(c.list));router.post('/',asyncHandler(c.create));router.get('/:id',asyncHandler(c.detail));router.post('/:id/messages',asyncHandler(c.message));module.exports=router;

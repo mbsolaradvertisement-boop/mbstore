@@ -74,6 +74,7 @@ async function migrate() {
     }
     await connection.query(`INSERT IGNORE INTO seller_settings (seller_id) SELECT id FROM users WHERE role='Seller'`);
     await connection.query(`INSERT IGNORE INTO customer_settings (customer_id) SELECT id FROM users WHERE role='Customer'`);
+    await connection.query(`INSERT IGNORE INTO support_profiles (user_id,support_id) SELECT id,CONCAT('MBS-SUP-',LPAD(id,6,'0')) FROM users WHERE role='Support'`);
   } finally {
     connection.release();
   }

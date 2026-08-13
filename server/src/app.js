@@ -19,6 +19,8 @@ const reportRoutes = require("./routes/report.routes");
 const sellerSettingsRoutes = require("./routes/seller-settings.routes");
 const sellerDashboardRoutes = require("./routes/seller-dashboard.routes");
 const customerSettingsRoutes = require("./routes/customer-settings.routes");
+const customerDashboardRoutes = require("./routes/customer-dashboard.routes");
+const userSupportTicketRoutes = require("./routes/user-support-ticket.routes");
 const { errorHandler, notFound } = require("./middleware/error.middleware");
 
 const app = express();
@@ -46,6 +48,8 @@ app.use("/api/seller/reports", reportRoutes);
 app.use("/api/seller/settings", sellerSettingsRoutes);
 app.use("/api/seller/dashboard", sellerDashboardRoutes);
 app.use("/api/customer/settings", customerSettingsRoutes);
+app.use("/api/customer/dashboard", customerDashboardRoutes);
+app.use("/api/support-tickets", userSupportTicketRoutes);
 app.use("/api", profileRoutes);
 app.use(notFound);
 app.use(errorHandler);

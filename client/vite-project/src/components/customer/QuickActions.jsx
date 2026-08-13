@@ -6,7 +6,7 @@ import {
   HiOutlineHeart,
 } from "react-icons/hi2";
 
-const actions = [
+const makeActions = stats => [
   {
     title: "Browse Products",
     description: "Explore verified industrial products",
@@ -15,19 +15,20 @@ const actions = [
   },
   {
     title: "Request Quotation",
-    description: "Send quotation requests to sellers",
+    description: `${stats.totalQuotations||0} requests raised`,
     icon: HiOutlineDocumentText,
-    link: "/customer/quotations",
+    link: "/catalogue",
   },
   {
     title: "Favorites",
-    description: "View your saved products",
+    description: `${stats.favoriteProducts||0} saved products`,
     icon: HiOutlineHeart,
-    link: "/customer/favorites",
+    link: "/customer/wishlist",
   },
 ];
 
-export default function QuickActions() {
+export default function QuickActions({stats={}}) {
+  const actions=makeActions(stats);
   return (
     <div className="rounded-[20px] border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-6">
