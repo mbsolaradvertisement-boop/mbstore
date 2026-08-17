@@ -9,7 +9,7 @@ const positiveInt = (value, fallback, max) => {
   const number = Number.parseInt(value, 10);
   return Number.isFinite(number) && number > 0 ? Math.min(number, max) : fallback;
 };
-const baseSelect = "SELECT p.id,p.product_code AS productCode,p.category_id AS categoryId,p.company_id AS companyId,p.product_name AS productName,p.brand,p.description,p.availability,p.status,p.views,p.enquiries,p.created_at AS createdAt,p.updated_at AS updatedAt,c.name AS categoryName,co.company_name AS brand,CASE WHEN co.id IS NULL THEN NULL ELSE CONCAT('/companies/',co.id,'/logo') END AS companyLogoUrl,(SELECT image_url FROM product_images WHERE product_id=p.id ORDER BY is_primary DESC,sort_order LIMIT 1) imageUrl FROM products p JOIN categories c ON c.id=p.category_id LEFT JOIN companies co ON co.id=p.company_id";
+const baseSelect = "SELECT p.id,p.product_code AS productCode,p.category_id AS categoryId,p.company_id AS companyId,p.product_name AS productName,p.brand,p.description,p.availability,p.status,p.suspension_reason AS suspensionReason,p.suspended_at AS suspendedAt,p.views,p.enquiries,p.created_at AS createdAt,p.updated_at AS updatedAt,c.name AS categoryName,co.company_name AS brand,CASE WHEN co.id IS NULL THEN NULL ELSE CONCAT('/companies/',co.id,'/logo') END AS companyLogoUrl,(SELECT image_url FROM product_images WHERE product_id=p.id ORDER BY is_primary DESC,sort_order LIMIT 1) imageUrl FROM products p JOIN categories c ON c.id=p.category_id LEFT JOIN companies co ON co.id=p.company_id";
 const availabilityValue = value => {
   const normalized=String(value||"in_stock").trim();
   if(!["in_stock","low_stock","out_of_stock"].includes(normalized))throw new ApiError(400,"Invalid product availability.","INVALID_AVAILABILITY");
@@ -62,12 +62,12 @@ exports.list = async (req, res) => {
   const conditions = ["p.seller_id=?", "p.status<>'deleted'"], params = [req.user.id];
   if (req.query.search?.trim()) { conditions.push("(p.product_name LIKE ? OR p.brand LIKE ? OR c.name LIKE ? OR p.product_code LIKE ?)"); params.push(...Array(4).fill(`%${req.query.search.trim()}%`)); }
   if (req.query.categoryId) { conditions.push("p.category_id=?"); params.push(req.query.categoryId); }
-  if (["active", "pending", "draft", "inactive"].includes(req.query.status)) { conditions.push("p.status=?"); params.push(req.query.status); }
+  if (["active", "pending", "draft", "inactive", "suspended"].includes(req.query.status)) { conditions.push("p.status=?"); params.push(req.query.status); }
   if (req.query.brand?.trim()) { conditions.push("p.brand=?"); params.push(req.query.brand.trim()); }
   const where = conditions.join(" AND "), orders = { oldest: "p.created_at ASC", az: "p.product_name ASC", newest: "p.created_at DESC" }, order = orders[req.query.sort] || orders.newest;
   const [[count]] = await pool.execute(`SELECT COUNT(*) total FROM products p JOIN categories c ON c.id=p.category_id WHERE ${where}`, params);
   const [rows] = await pool.execute(`${baseSelect} WHERE ${where} ORDER BY ${order} LIMIT ${limit} OFFSET ${offset}`, params);
-  const [[stats]] = await pool.execute("SELECT COUNT(*) totalProducts,SUM(status='active') activeProducts,SUM(status='pending') pendingProducts,SUM(status='draft') draftProducts FROM products WHERE seller_id=? AND status<>'deleted'", [req.user.id]);
+  const [[stats]] = await pool.execute("SELECT COUNT(*) totalProducts,SUM(status='active') activeProducts,SUM(status='pending') pendingProducts,SUM(status='draft') draftProducts,SUM(status='suspended') suspendedProducts FROM products WHERE seller_id=? AND status<>'deleted'", [req.user.id]);
   const [brands] = await pool.execute("SELECT DISTINCT brand FROM products WHERE seller_id=? AND status<>'deleted' ORDER BY brand", [req.user.id]);
   const totalRecords = Number(count.total);
   res.json({ data: rows, stats: Object.fromEntries(Object.entries(stats).map(([key, value]) => [key, Number(value || 0)])), brands: brands.map((item) => item.brand), currentPage: page, totalPages: Math.max(1, Math.ceil(totalRecords / limit)), totalRecords, limit });
@@ -115,7 +115,8 @@ exports.update = async (req, res) => {
     await connection.beginTransaction();
     const company = await selectedCompany(req.body.companyId, connection);
     const brand = company.companyName;
-    await owned(req.params.id, req.user.id, connection, true);
+    const currentProduct = await owned(req.params.id, req.user.id, connection, true);
+    if (currentProduct.status === "suspended") throw new ApiError(403, "This product is suspended by an administrator and cannot be edited.", "PRODUCT_SUSPENDED");
     const { attributes } = await categoryAndAttributes(categoryId, req.body.attributes, connection);
     const [duplicates] = await connection.execute("SELECT id FROM products WHERE seller_id=? AND category_id=? AND LOWER(product_name)=LOWER(?) AND id<>? AND status<>'deleted' LIMIT 1", [req.user.id, categoryId, productName, req.params.id]);
     if (duplicates[0]) throw new ApiError(409, "You already have a product with this name in this category.", "DUPLICATE_PRODUCT");

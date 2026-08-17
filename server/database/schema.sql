@@ -145,7 +145,10 @@ CREATE TABLE IF NOT EXISTS products (
   brand VARCHAR(120) NOT NULL,
   description TEXT NOT NULL,
   availability ENUM('in_stock','low_stock','out_of_stock') NOT NULL DEFAULT 'in_stock',
-  status ENUM('draft','active','inactive','pending','deleted') NOT NULL DEFAULT 'active',
+  status ENUM('draft','active','inactive','pending','suspended','deleted') NOT NULL DEFAULT 'active',
+  suspension_reason VARCHAR(500) NULL,
+  suspended_at TIMESTAMP NULL,
+  suspended_by BIGINT UNSIGNED NULL,
   views INT UNSIGNED NOT NULL DEFAULT 0,
   enquiries INT UNSIGNED NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -153,10 +156,13 @@ CREATE TABLE IF NOT EXISTS products (
   CONSTRAINT fk_product_seller FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE RESTRICT,
   CONSTRAINT fk_product_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
   CONSTRAINT fk_product_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL,
+  CONSTRAINT fk_product_suspended_by FOREIGN KEY (suspended_by) REFERENCES users(id) ON DELETE SET NULL,
   INDEX idx_products_seller (seller_id),
   INDEX idx_products_category (category_id),
   INDEX idx_products_company (company_id),
   INDEX idx_products_status (status),
+  INDEX idx_products_status_created (status, created_at),
+  INDEX idx_products_analytics (seller_id, category_id, company_id, created_at),
   INDEX idx_products_code (product_code),
   INDEX idx_products_search (product_name, brand)
 );
@@ -197,6 +203,25 @@ CREATE TABLE IF NOT EXISTS product_documents (
   INDEX idx_product_documents_product (product_id)
 );
 
+CREATE TABLE IF NOT EXISTS product_reports (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  product_id BIGINT UNSIGNED NOT NULL,
+  customer_id BIGINT UNSIGNED NOT NULL,
+  reason VARCHAR(1000) NOT NULL,
+  status ENUM('pending','reviewed','actioned','dismissed') NOT NULL DEFAULT 'pending',
+  reviewed_by BIGINT UNSIGNED NULL,
+  admin_note VARCHAR(500) NULL,
+  reviewed_at TIMESTAMP NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_product_report_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  CONSTRAINT fk_product_report_customer FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_product_report_admin FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_product_reports_status_created (status, created_at),
+  INDEX idx_product_reports_product (product_id, status),
+  INDEX idx_product_reports_customer (customer_id, created_at)
+);
+
 CREATE TABLE IF NOT EXISTS customer_product_views (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   customer_id BIGINT UNSIGNED NOT NULL,
@@ -235,7 +260,9 @@ CREATE TABLE IF NOT EXISTS quotation_requests (
   INDEX idx_quotation_customer (customer_id, created_at),
   INDEX idx_quotation_seller (seller_id, created_at),
   INDEX idx_quotation_product (product_id),
-  INDEX idx_quotation_status (status)
+  INDEX idx_quotation_status (status),
+  INDEX idx_quotation_status_created (status, created_at),
+  INDEX idx_quotation_analytics (product_id, seller_id, customer_id, created_at)
 );
 
 CREATE TABLE IF NOT EXISTS quotation_responses (

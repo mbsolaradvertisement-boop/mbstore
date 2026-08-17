@@ -11,8 +11,8 @@ const adminNavigation = [
   ["Dashboard", FiGrid, "/admin/dashboard"], ["Company Management", FiShoppingBag, "/admin/companies"],
   ["Seller Management", FiUsers, "/admin/sellers"], ["Customer Management", FiUsers, "/admin/customers"],
   ["Support Management", FiHelpCircle, "/admin/support"],
-  ["Product Management", FiBox], ["Categories", FiLayers, "/admin/categories"],
-  ["Banner Management", FiImage], ["Support Tickets", FiHelpCircle], ["Analytics", FiActivity],
+  ["Product Management", FiBox, "/admin/products"], ["Categories", FiLayers, "/admin/categories"],
+  ["Banner Management", FiImage], ["Support Tickets", FiHelpCircle], ["Analytics", FiActivity, "/admin/analytics"],
 ];
 
 export default function DashboardShell({ title, eyebrow, children }) {

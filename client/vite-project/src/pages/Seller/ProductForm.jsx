@@ -34,6 +34,7 @@ export default function ProductForm() {
   const [errors, setErrors] = useState({}), [loading, setLoading] = useState(editing), [saving, setSaving] = useState(false);
   const [image, setImage] = useState(""), [imageName, setImageName] = useState(""), [existingImage, setExistingImage] = useState("");
   const [documentName, setDocumentName] = useState("");
+  const [suspension, setSuspension] = useState(null);
 
   useEffect(() => { getCategories().then(({ data }) => setCategories(data.data)).catch((error) => toast(apiMessage(error), "error")); }, [toast]);
   useEffect(() => { getCompanies().then(({ data }) => setCompanies(data.data)).catch((error) => toast(apiMessage(error), "error")); }, [toast]);
@@ -44,6 +45,7 @@ export default function ProductForm() {
       const product = data.product;
       await loadFields(product.categoryId);
       setForm({ categoryId: String(product.categoryId), companyId: String(product.companyId || ""), productName: product.productName, brand: product.brand, description: product.description, availability: product.availability || "in_stock", status: product.status, attributes: product.attributes || {} });
+      if (product.status === "suspended") setSuspension({ productName: product.productName, reason: product.suspensionReason });
       setExistingImage(product.images?.[0]?.imageUrl || product.imageUrl || "");
     }).catch((error) => toast(apiMessage(error), "error")).finally(() => setLoading(false));
   }, [editing, id, loadFields, toast]);
@@ -85,6 +87,7 @@ export default function ProductForm() {
   const change = (key, value) => { setForm((current) => ({ ...current, [key]: value })); setErrors((current) => ({ ...current, [key]: key === "description" && value.trim().length < 10 ? "Description must contain at least 10 characters." : value.trim().length < 2 ? "Enter at least 2 characters." : "" })); };
 
   if (loading) return <div className="space-y-4">{[1, 2, 3].map((item) => <div key={item} className="h-40 animate-pulse rounded-2xl bg-slate-200" />)}</div>;
+  if (suspension) return <div className="mx-auto max-w-2xl rounded-3xl border border-red-200 bg-white p-8 shadow-sm"><span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-red-700">Suspended</span><h1 className="mt-4 text-2xl font-black">{suspension.productName} cannot be edited</h1><p className="mt-2 text-slate-600">This product was suspended by an administrator and is hidden from the catalogue.</p>{suspension.reason && <div className="mt-5 rounded-2xl bg-red-50 p-4"><p className="text-xs font-black uppercase tracking-wide text-red-700">Administrator reason</p><p className="mt-1 text-sm text-red-900">{suspension.reason}</p></div>}<Link to="/seller/products" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white"><FiArrowLeft />Back to products</Link></div>;
   return <form onSubmit={submit} className="mx-auto max-w-5xl space-y-6">
     <div className="flex items-center gap-4"><Link to="/seller/products" className="grid size-10 place-items-center rounded-xl border bg-white"><FiArrowLeft /></Link><div><h1 className="text-3xl font-black">{editing ? "Edit Product" : "Add Product"}</h1><p className="text-sm text-slate-500">Select a category to load its required product fields.</p></div></div>
     <section className="rounded-2xl border bg-white p-6 shadow-sm"><h2 className="text-lg font-black">Basic Information</h2><div className="mt-5 grid gap-5 sm:grid-cols-2">

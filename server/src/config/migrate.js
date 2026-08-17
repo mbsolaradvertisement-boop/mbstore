@@ -40,6 +40,20 @@ async function migrate() {
     }
 
     const [productColumns] = await connection.query("SHOW COLUMNS FROM products");
+    const productStatus = productColumns.find((column) => column.Field === "status");
+    if (productStatus && !productStatus.Type.includes("suspended")) {
+      await connection.query("ALTER TABLE products MODIFY COLUMN status ENUM('draft','active','inactive','pending','suspended','deleted') NOT NULL DEFAULT 'active'");
+    }
+    if (!productColumns.some((column) => column.Field === "suspension_reason")) {
+      await connection.query("ALTER TABLE products ADD COLUMN suspension_reason VARCHAR(500) NULL AFTER status");
+    }
+    if (!productColumns.some((column) => column.Field === "suspended_at")) {
+      await connection.query("ALTER TABLE products ADD COLUMN suspended_at TIMESTAMP NULL AFTER suspension_reason");
+    }
+    if (!productColumns.some((column) => column.Field === "suspended_by")) {
+      await connection.query("ALTER TABLE products ADD COLUMN suspended_by BIGINT UNSIGNED NULL AFTER suspended_at");
+      await connection.query("ALTER TABLE products ADD CONSTRAINT fk_product_suspended_by FOREIGN KEY (suspended_by) REFERENCES users(id) ON DELETE SET NULL");
+    }
     if (!productColumns.some((column) => column.Field === "company_id")) {
       await connection.query("ALTER TABLE products ADD COLUMN company_id BIGINT UNSIGNED NULL AFTER category_id");
       await connection.query("ALTER TABLE products ADD CONSTRAINT fk_product_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL");
@@ -49,6 +63,10 @@ async function migrate() {
     if (!productColumns.some((column) => column.Field === "availability")) {
       await connection.query("ALTER TABLE products ADD COLUMN availability ENUM('in_stock','low_stock','out_of_stock') NOT NULL DEFAULT 'in_stock' AFTER description");
     }
+    const [productIndexes] = await connection.query("SHOW INDEX FROM products");
+    const productIndexNames = new Set(productIndexes.map((index) => index.Key_name));
+    if (!productIndexNames.has("idx_products_status_created")) await connection.query("CREATE INDEX idx_products_status_created ON products(status,created_at)");
+    if (!productIndexNames.has("idx_products_analytics")) await connection.query("CREATE INDEX idx_products_analytics ON products(seller_id,category_id,company_id,created_at)");
 
     const [quotationColumns] = await connection.query("SHOW COLUMNS FROM quotation_requests");
     const quotationStatus = quotationColumns.find((column) => column.Field === "status");
@@ -58,6 +76,10 @@ async function migrate() {
     if (!quotationColumns.some((column) => column.Field === "customer_decided_at")) {
       await connection.query("ALTER TABLE quotation_requests ADD COLUMN customer_decided_at TIMESTAMP NULL AFTER responded_at");
     }
+    const [quotationIndexes] = await connection.query("SHOW INDEX FROM quotation_requests");
+    const quotationIndexNames = new Set(quotationIndexes.map((index) => index.Key_name));
+    if (!quotationIndexNames.has("idx_quotation_status_created")) await connection.query("CREATE INDEX idx_quotation_status_created ON quotation_requests(status,created_at)");
+    if (!quotationIndexNames.has("idx_quotation_analytics")) await connection.query("CREATE INDEX idx_quotation_analytics ON quotation_requests(product_id,seller_id,customer_id,created_at)");
 
     // Backfill profiles for accounts created before profile tables existed.
     const [customers] = await connection.query("SELECT id, name, email FROM users u WHERE role='Customer' AND NOT EXISTS (SELECT 1 FROM customer_profiles p WHERE p.user_id=u.id)");
