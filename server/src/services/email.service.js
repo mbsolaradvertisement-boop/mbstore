@@ -27,7 +27,7 @@ async function sendMail({ to, subject, html }) {
   }
 }
 
-const sendOtpEmail = (email, otp, name) => sendMail({ to: email, subject: "Your MB Store verification code", html: shell("Verify your email", name, `<p style="line-height:1.7">Use this one-time code to continue:</p><div style="margin:24px 0;padding:20px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:14px;text-align:center;font-size:34px;font-weight:800;letter-spacing:10px;color:#0f766e">${otp}</div><p>This code expires in <strong>10 minutes</strong>.</p>`) });
+const sendPasswordReset = (email, name, resetUrl) => sendMail({ to: email, subject: "Reset your MB Store password", html: shell("Reset your password", name, `<p style="line-height:1.7">Use the secure link below to create a new password. It expires in 30 minutes.</p><p style="margin:24px 0"><a href="${escapeHtml(resetUrl)}" style="display:inline-block;padding:13px 20px;border-radius:12px;background:#0f766e;color:#fff;text-decoration:none;font-weight:700">Reset password</a></p>`) });
 const sendWelcomeCustomer = (email, name) => sendMail({ to: email, subject: "Welcome to MB Store", html: shell("Welcome to MB Store", name, "<p style=\"line-height:1.7\">Your customer account is ready. You can now discover products from verified sellers.</p>") });
 const sendSellerDecision = (email, name, approved) => sendMail({ to: email, subject: approved ? "Your Seller Account has been Approved" : "Seller Verification Update", html: shell(approved ? "Seller account approved" : "Seller verification update", name, approved ? "<p>Your seller account is approved. You can now sign in to your dashboard.</p>" : "<p>Your seller application was not approved. Please contact support for more details.</p>") });
 const sendProductModeration = (email, name, product, suspended, reason) => {
@@ -40,4 +40,4 @@ const sendProductModeration = (email, name, product, suspended, reason) => {
   return sendMail({ to: email, subject, html: shell(heading, name, content) });
 };
 
-module.exports = { sendOtpEmail, sendWelcomeCustomer, sendSellerDecision, sendProductModeration };
+module.exports = { sendPasswordReset, sendWelcomeCustomer, sendSellerDecision, sendProductModeration };

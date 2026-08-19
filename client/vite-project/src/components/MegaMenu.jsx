@@ -1,11 +1,3 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { getCategories } from "../services/categoryService";
-
-export default function MegaMenu(){
-  const navigate=useNavigate();
-  const [categories,setCategories]=useState([]);
-  useEffect(()=>{let active=true;getCategories().then(({data})=>{if(active)setCategories(data.data||[])}).catch(()=>{});return()=>{active=false}},[]);
-  if(!categories.length)return null;
-  return <div className="border-t border-slate-100 bg-white shadow-sm"><nav aria-label="Product categories" className="section-shell flex gap-1 overflow-x-auto py-1 [scrollbar-width:none]">{categories.map((category)=><button key={category.id} type="button" onClick={()=>navigate(`/catalogue?categoryId=${category.id}`)} className="shrink-0 rounded-lg px-3 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-700 xl:text-sm">{category.name}</button>)}</nav></div>;
-}
+import {FiChevronDown} from "react-icons/fi";import {useLocation,useNavigate} from "react-router-dom";import useLiveHomeData from "../hooks/useLiveHomeData";
+const emptyCategories={data:[]};
+export default function MegaMenu(){const navigate=useNavigate(),location=useLocation(),response=useLiveHomeData("/categories",emptyCategories),categories=(response?.data||[]).slice(0,20);if(!categories.length)return null;const showMore=()=>{if(location.pathname==="/")document.getElementById("categories")?.scrollIntoView({behavior:"smooth",block:"start"});else navigate("/#categories")};return <div className="border-t border-slate-100 bg-white shadow-sm"><nav aria-label="Product categories" className="flex w-full items-center gap-1 overflow-x-auto px-3 py-1 sm:px-5 lg:px-8 [scrollbar-width:none]">{categories.map(category=><button key={category.id} type="button" onClick={()=>navigate(`/catalogue?categoryId=${category.id}`)} className="min-w-fit flex-1 whitespace-nowrap rounded-lg px-2.5 py-2.5 text-center text-xs font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-700 xl:text-sm">{category.name}</button>)}<button type="button" onClick={showMore} className="sticky right-0 flex min-w-fit shrink-0 items-center justify-center gap-1 rounded-lg bg-white px-3 py-2.5 text-xs font-black text-sky-700 shadow-[-8px_0_12px_white] transition hover:bg-sky-50 xl:text-sm">More <FiChevronDown/></button></nav></div>}

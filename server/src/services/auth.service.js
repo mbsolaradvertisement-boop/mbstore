@@ -1,93 +1,25 @@
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 const { pool } = require("../config/database");
-const otpService = require("./otp.service");
 const emailService = require("./email.service");
-const { signSession, signRegistration, verifyToken, hashToken, SESSION_DAYS } = require("../utils/tokens");
+const { signAccessToken, generateRefreshToken, hashToken, SESSION_DAYS } = require("../utils/tokens");
 const ApiError = require("../utils/api-error");
 
+const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 const publicUser = ({ id, name, email, gender, role, status, login_allowed, email_verified, created_at }) => ({ id, name, email, gender, role, status, loginAllowed: Boolean(login_allowed), emailVerified: Boolean(email_verified), createdAt: created_at });
-async function findUserByEmail(email) { const [rows] = await pool.execute("SELECT * FROM users WHERE email = ? LIMIT 1", [otpService.normalize(email)]); return rows[0] || null; }
+async function findUserByEmail(email) { const [rows] = await pool.execute("SELECT * FROM users WHERE email = ? LIMIT 1", [normalizeEmail(email)]); return rows[0] || null; }
 async function findUserById(id) { const [rows] = await pool.execute("SELECT * FROM users WHERE id = ? LIMIT 1", [id]); return rows[0] ? publicUser(rows[0]) : null; }
+async function createSession(user, metadata) { const refreshToken=generateRefreshToken();const expiresAt=new Date(Date.now()+SESSION_DAYS*86400000);const [result]=await pool.execute("INSERT INTO sessions (user_id,refresh_token_hash,expires_at,device,user_agent,ip_address) VALUES (?,?,?,?,?,?)",[user.id,hashToken(refreshToken),expiresAt,metadata.device?.slice(0,255)||null,metadata.device?.slice(0,255)||null,metadata.ip||null]);return {accessToken:signAccessToken(user,result.insertId),refreshToken,user:publicUser(user),expiresAt}; }
+async function generateProfileId(connection, table, column) { for (let attempt=0;attempt<10;attempt+=1) { const id=`MBS-${Math.floor(100000+Math.random()*900000)}`; const [rows]=await connection.execute(`SELECT 1 FROM ${table} WHERE ${column}=? LIMIT 1`,[id]); if(!rows.length)return id; } throw new ApiError(500,"Unable to generate a profile ID.","ID_GENERATION_FAILED"); }
 
-async function startRegistration(name, email) {
-  email = otpService.normalize(email);
-  if (await findUserByEmail(email)) throw new ApiError(409, "Email already exists.", "DUPLICATE_EMAIL");
-  await otpService.issue(email, name);
-  return { email, expiresIn: 600, resendAfter: 60 };
-}
+async function registerCustomer({name,email,password},metadata) { email=normalizeEmail(email); const passwordHash=await bcrypt.hash(password,12); const connection=await pool.getConnection(); try { await connection.beginTransaction(); const [result]=await connection.execute("INSERT INTO users (name,email,password_hash,role,status,login_allowed,email_verified) VALUES (?,?,?,'Customer','Verified',TRUE,TRUE)",[name.trim(),email,passwordHash]); const customerId=await generateProfileId(connection,"customer_profiles","customer_id"); await connection.execute("INSERT INTO customer_profiles (user_id,customer_id,customer_name,email,profile_completion) VALUES (?,?,?,?,25)",[result.insertId,customerId,name.trim(),email]); await connection.commit(); const user=await findUserByEmail(email); const session=await createSession(user,metadata); emailService.sendWelcomeCustomer(email,name).catch(error=>console.error("Welcome email failed:",error.message)); return session; } catch(error) { await connection.rollback(); if(error.code==="ER_DUP_ENTRY")throw new ApiError(409,"Email already exists.","DUPLICATE_EMAIL"); throw error; } finally { connection.release(); } }
 
-async function sendLoginOtp(email) {
-  const user = await findUserByEmail(email);
-  if (!user) throw new ApiError(404, "No account found.", "USER_NOT_FOUND");
-  assertCanLogin(user);
-  await otpService.issue(user.email, user.name);
-  return { email: user.email, expiresIn: 600, resendAfter: 60 };
-}
+async function registerSeller({name,email,password,businessName,gstNumber,contactPerson}) { email=normalizeEmail(email); const passwordHash=await bcrypt.hash(password,12); const connection=await pool.getConnection(); try { await connection.beginTransaction(); const [user]=await connection.execute("INSERT INTO users (name,email,password_hash,role,status,login_allowed,email_verified) VALUES (?,?,?,'Seller','Pending',FALSE,TRUE)",[name.trim(),email,passwordHash]); await connection.execute("INSERT INTO seller_verifications (user_id,business_name,gst_number,contact_person,verification_status) VALUES (?,?,?,?,'Pending')",[user.insertId,businessName.trim(),gstNumber.toUpperCase(),contactPerson.trim()]); const sellerId=await generateProfileId(connection,"seller_profiles","seller_id"); await connection.execute("INSERT INTO seller_profiles (user_id,seller_id,seller_name,email,company_name,gst,verification_status,profile_completion) VALUES (?,?,?,?,?,?,'Pending',42)",[user.insertId,sellerId,name.trim(),email,businessName.trim(),gstNumber.toUpperCase()]); await connection.commit(); return findUserById(user.insertId); } catch(error) { await connection.rollback(); if(error.code==="ER_DUP_ENTRY")throw new ApiError(409,error.message.toLowerCase().includes("gst")?"GST number already exists.":"Email already exists.",error.message.toLowerCase().includes("gst")?"DUPLICATE_GST":"DUPLICATE_EMAIL"); throw error; } finally { connection.release(); } }
 
-async function verifyRegistrationOtp(email, otp, name) {
-  email = otpService.normalize(email);
-  if (await findUserByEmail(email)) throw new ApiError(409, "Email already exists.", "DUPLICATE_EMAIL");
-  await otpService.verify(email, otp);
-  return { registrationToken: signRegistration(email, name) };
-}
-
-function registrationFromToken(token) {
-  try { const payload = verifyToken(token); if (payload.type !== "registration" || !payload.email || !payload.name) throw new Error(); return payload; }
-  catch { throw new ApiError(401, "Registration session expired. Verify your email again.", "SESSION_EXPIRED"); }
-}
-
-async function createSession(user, metadata) {
-  const token = signSession(user); const expiresAt = new Date(Date.now() + SESSION_DAYS * 86400000);
-  await pool.execute("INSERT INTO sessions (user_id, jwt_token, expires_at, device, ip_address) VALUES (?, ?, ?, ?, ?)", [user.id, hashToken(token), expiresAt, metadata.device?.slice(0, 255) || null, metadata.ip || null]);
-  return { token, user: publicUser(user), expiresAt };
-}
-
-async function generateProfileId(connection, table, column) {
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    const id = `MBS-${Math.floor(100000 + Math.random() * 900000)}`;
-    const [rows] = await connection.execute(`SELECT 1 FROM ${table} WHERE ${column} = ? LIMIT 1`, [id]);
-    if (!rows.length) return id;
-  }
-  throw new ApiError(500, "Unable to generate a profile ID.", "ID_GENERATION_FAILED");
-}
-
-async function registerCustomer(token, metadata) {
-  const { email, name } = registrationFromToken(token);
-  const connection = await pool.getConnection();
-  try {
-    await connection.beginTransaction();
-    const [result] = await connection.execute("INSERT INTO users (name, email, role, status, login_allowed, email_verified) VALUES (?, ?, 'Customer', 'Verified', TRUE, TRUE)", [name, email]);
-    const customerId = await generateProfileId(connection, "customer_profiles", "customer_id");
-    await connection.execute("INSERT INTO customer_profiles (user_id, customer_id, customer_name, email, profile_completion) VALUES (?, ?, ?, ?, 25)", [result.insertId, customerId, name, email]);
-    await connection.commit();
-    const user = await findUserByEmail(email); const session = await createSession(user, metadata);
-    emailService.sendWelcomeCustomer(email, name).catch((error) => console.error("Welcome email failed:", error.message));
-    return session;
-  } catch (error) { await connection.rollback(); if (error.code === "ER_DUP_ENTRY") throw new ApiError(409, "Email already exists.", "DUPLICATE_EMAIL"); throw error; }
-  finally { connection.release(); }
-}
-
-async function registerSeller(token, details) {
-  const { email, name } = registrationFromToken(token); const connection = await pool.getConnection();
-  try {
-    await connection.beginTransaction();
-    const [user] = await connection.execute("INSERT INTO users (name, email, role, status, login_allowed, email_verified) VALUES (?, ?, 'Seller', 'Pending', FALSE, TRUE)", [name, email]);
-    await connection.execute("INSERT INTO seller_verifications (user_id, business_name, gst_number, contact_person, verification_status) VALUES (?, ?, ?, ?, 'Pending')", [user.insertId, details.businessName, details.gstNumber, details.contactPerson]);
-    const sellerId = await generateProfileId(connection, "seller_profiles", "seller_id");
-    await connection.execute("INSERT INTO seller_profiles (user_id, seller_id, seller_name, email, company_name, gst, verification_status, profile_completion) VALUES (?, ?, ?, ?, ?, ?, 'Pending', 42)", [user.insertId, sellerId, name, email, details.businessName, details.gstNumber]);
-    await connection.commit(); return findUserById(user.insertId);
-  } catch (error) { await connection.rollback(); if (error.code === "ER_DUP_ENTRY") throw new ApiError(409, error.message.toLowerCase().includes("gst") ? "GST number already exists." : "Email already exists.", error.message.toLowerCase().includes("gst") ? "DUPLICATE_GST" : "DUPLICATE_EMAIL"); throw error; }
-  finally { connection.release(); }
-}
-
-function assertCanLogin(user) {
-  if (!user) throw new ApiError(404, "No account found.", "USER_NOT_FOUND");
-  if (user.status === "Inactive") throw new ApiError(403, user.role === "Support" ? "Your support account is currently inactive. Please contact the administrator." : "Your account is inactive.", "USER_INACTIVE");
-  if (user.role === "Seller" && user.status === "Pending") throw new ApiError(403, "Your seller verification request is under review.", "SELLER_PENDING");
-  if (user.role === "Seller" && user.status === "Rejected") throw new ApiError(403, "Your seller application has been rejected. Contact support for more details.", "SELLER_REJECTED");
-  if (!user.login_allowed || user.status !== "Verified" || !user.email_verified) throw new ApiError(403, "Login is not allowed for this account.", "LOGIN_DISABLED");
-}
-
-async function login(email, otp, metadata) { const user = await findUserByEmail(email); if (!user) throw new ApiError(404, "No account found.", "USER_NOT_FOUND"); await otpService.verify(user.email, otp); assertCanLogin(user); return createSession(user, metadata); }
-async function logout(token) { if (token) await pool.execute("DELETE FROM sessions WHERE jwt_token = ?", [hashToken(token)]); }
-
-module.exports = { startRegistration, sendLoginOtp, verifyRegistrationOtp, registerCustomer, registerSeller, login, logout, findUserById, publicUser };
+function assertCanLogin(user) { if(user.status==="Inactive")throw new ApiError(403,"Your account has been suspended. Please contact MB Store support.","USER_INACTIVE"); if(user.role==="Seller"&&user.status==="Pending")throw new ApiError(403,"You are not verified by the Mbstore yet. Please wait until your seller account is approved.","SELLER_PENDING"); if(user.role==="Seller"&&user.status==="Rejected")throw new ApiError(403,"Your seller verification request was rejected.","SELLER_REJECTED"); if(!user.login_allowed||user.status!=="Verified")throw new ApiError(403,"Login is not allowed for this account.","LOGIN_DISABLED"); }
+async function login(email,password,metadata) { const user=await findUserByEmail(email); if(!user)throw new ApiError(401,"No account found with these credentials.","USER_NOT_FOUND"); if(!user.password_hash||!(await bcrypt.compare(password,user.password_hash)))throw new ApiError(401,"Invalid email or password.","INVALID_CREDENTIALS"); assertCanLogin(user); return createSession(user,metadata); }
+async function forgotPassword(email) { const user=await findUserByEmail(email); const response={message:"If an account exists for that email, a password reset link has been sent."}; if(!user)return response; const token=crypto.randomBytes(32).toString("hex"); await pool.execute("UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=? AND used_at IS NULL",[user.id]); await pool.execute("INSERT INTO password_reset_tokens (user_id,token_hash,expires_at) VALUES (?,?,DATE_ADD(NOW(),INTERVAL 30 MINUTE))",[user.id,hashToken(token)]); const clientUrl=(process.env.CLIENT_URL||"http://localhost:5173").replace(/\/$/,""); await emailService.sendPasswordReset(user.email,user.name,`${clientUrl}/reset-password/${token}`); return response; }
+async function resetPassword(token,password) { const connection=await pool.getConnection(); try { await connection.beginTransaction(); const [rows]=await connection.execute("SELECT * FROM password_reset_tokens WHERE token_hash=? AND used_at IS NULL AND expires_at>NOW() LIMIT 1 FOR UPDATE",[hashToken(token)]); if(!rows[0])throw new ApiError(400,"This password reset link is invalid or has expired.","INVALID_RESET_TOKEN"); await connection.execute("UPDATE users SET password_hash=? WHERE id=?",[await bcrypt.hash(password,12),rows[0].user_id]); await connection.execute("UPDATE password_reset_tokens SET used_at=NOW() WHERE id=?",[rows[0].id]); await connection.execute("DELETE FROM sessions WHERE user_id=?",[rows[0].user_id]); await connection.commit(); return {message:"Password updated successfully. You can now log in."}; } catch(error) { await connection.rollback(); throw error; } finally { connection.release(); } }
+async function refreshSession(refreshToken,metadata){if(!refreshToken)throw new ApiError(401,"Session expired.","SESSION_EXPIRED");const tokenHash=hashToken(refreshToken);const connection=await pool.getConnection();try{await connection.beginTransaction();const [rows]=await connection.execute("SELECT s.*,u.*,s.id session_id,s.expires_at session_expires_at,s.updated_at session_updated_at FROM sessions s JOIN users u ON u.id=s.user_id WHERE (s.refresh_token_hash=? OR s.previous_refresh_token_hash=?) LIMIT 1 FOR UPDATE",[tokenHash,tokenHash]);const session=rows[0];if(!session||session.revoked_at||new Date(session.session_expires_at)<=new Date())throw new ApiError(401,"Session expired. Please login again.","SESSION_EXPIRED");const previousTokenReused=session.previous_refresh_token_hash===tokenHash;const outsideParallelTabGrace=Date.now()-new Date(session.session_updated_at).getTime()>30000;if(previousTokenReused&&outsideParallelTabGrace){await connection.execute("UPDATE sessions SET revoked_at=NOW() WHERE id=?",[session.session_id]);await connection.commit();throw new ApiError(401,"Session reuse detected. Please login again.","SESSION_REUSE_DETECTED");}assertCanLogin(session);const nextRefreshToken=generateRefreshToken();await connection.execute("UPDATE sessions SET previous_refresh_token_hash=refresh_token_hash,refresh_token_hash=?,device=?,user_agent=?,ip_address=? WHERE id=?",[hashToken(nextRefreshToken),metadata.device?.slice(0,255)||null,metadata.device?.slice(0,255)||null,metadata.ip||null,session.session_id]);await connection.commit();return {accessToken:signAccessToken(session,session.session_id),refreshToken:nextRefreshToken,user:publicUser(session),expiresAt:new Date(session.session_expires_at)};}catch(error){try{await connection.rollback()}catch{}throw error;}finally{connection.release();}}
+async function logout(refreshToken,accessToken){if(refreshToken){await pool.execute("UPDATE sessions SET revoked_at=NOW() WHERE refresh_token_hash=? OR previous_refresh_token_hash=?",[hashToken(refreshToken),hashToken(refreshToken)]);return;}if(accessToken)await pool.execute("DELETE FROM sessions WHERE jwt_token=?",[hashToken(accessToken)]);}
+module.exports={registerCustomer,registerSeller,login,refreshSession,forgotPassword,resetPassword,logout,findUserById,publicUser};

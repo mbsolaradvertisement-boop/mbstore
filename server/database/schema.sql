@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS users (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
   email VARCHAR(254) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NULL,
   role ENUM('Admin','Seller','Customer','Support') NOT NULL,
   gender ENUM('Male','Female','Other') NULL,
   status ENUM('Pending','Verified','Rejected','Inactive') NOT NULL DEFAULT 'Pending',
@@ -11,16 +12,15 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_users_role_status (role, status)
 );
-CREATE TABLE IF NOT EXISTS email_otps (
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  email VARCHAR(254) NOT NULL,
-  otp_hash CHAR(64) NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  token_hash CHAR(64) NOT NULL UNIQUE,
   expires_at DATETIME NOT NULL,
-  attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  used BOOLEAN NOT NULL DEFAULT FALSE,
+  used_at DATETIME NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_email_otps_lookup (email, created_at),
-  INDEX idx_email_otps_expiry (expires_at)
+  CONSTRAINT fk_password_reset_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_password_reset_expiry (user_id, expires_at)
 );
 CREATE TABLE IF NOT EXISTS seller_verifications (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -38,14 +38,28 @@ CREATE TABLE IF NOT EXISTS seller_verifications (
 CREATE TABLE IF NOT EXISTS sessions (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NOT NULL,
-  jwt_token CHAR(64) NOT NULL UNIQUE,
+  jwt_token CHAR(64) NULL UNIQUE,
+  refresh_token_hash CHAR(64) NULL UNIQUE,
+  previous_refresh_token_hash CHAR(64) NULL,
   expires_at DATETIME NOT NULL,
+  revoked_at DATETIME NULL,
   device VARCHAR(255) NULL,
+  user_agent VARCHAR(255) NULL,
   ip_address VARCHAR(45) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_sessions_expiry (expires_at)
+  INDEX idx_sessions_expiry (expires_at),
+  INDEX idx_sessions_user_expiry (user_id, expires_at)
 );
+
+CREATE TABLE IF NOT EXISTS support_assignment_state (
+  id TINYINT UNSIGNED PRIMARY KEY,
+  last_support_id BIGINT UNSIGNED NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_assignment_last_support FOREIGN KEY (last_support_id) REFERENCES users(id) ON DELETE SET NULL
+);
+INSERT IGNORE INTO support_assignment_state (id, last_support_id) VALUES (1, NULL);
 
 CREATE TABLE IF NOT EXISTS customer_profiles (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -113,11 +127,31 @@ CREATE TABLE IF NOT EXISTS categories (
   category_code VARCHAR(32) NOT NULL UNIQUE,
   name VARCHAR(120) NOT NULL UNIQUE,
   slug VARCHAR(140) NOT NULL UNIQUE,
+  image_url MEDIUMTEXT NULL,
   status ENUM('active','inactive') NOT NULL DEFAULT 'active',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_categories_slug (slug),
   INDEX idx_categories_status (status)
+);
+
+CREATE TABLE IF NOT EXISTS home_banners (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(180) NOT NULL,
+  subtitle VARCHAR(255) NULL,
+  description VARCHAR(1000) NULL,
+  image_url MEDIUMTEXT NOT NULL,
+  button_text VARCHAR(80) NULL,
+  button_link VARCHAR(500) NULL,
+  display_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+  start_date DATETIME NULL,
+  end_date DATETIME NULL,
+  created_by BIGINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_home_banner_admin FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
+  INDEX idx_home_banners_visibility (status,start_date,end_date,display_order)
 );
 
 CREATE TABLE IF NOT EXISTS category_field_templates (

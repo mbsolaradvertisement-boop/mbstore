@@ -7,13 +7,15 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "migrate": "node scripts/migrate.js",
-    "create-admin": "node scripts/create-admin.js"
+    "create-admin": "node scripts/create-admin.js",
+    "migrate-passwords": "node scripts/migrate-passwords.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

@@ -1,0 +1,3 @@
+const {pool}=require("../config/database");
+const ApiError=require("../utils/api-error");
+exports.update=async(req,res)=>{const image=String(req.body.imageUrl||"").trim()||null;if(image&&!/^data:image\/(jpeg|png|webp|gif);base64,/i.test(image))throw new ApiError(400,"Upload a JPG, PNG, WebP, or GIF image.","INVALID_IMAGE");if(image&&image.length>2800000)throw new ApiError(413,"Category image must be under 2 MB.","IMAGE_TOO_LARGE");const [result]=await pool.execute("UPDATE categories SET image_url=? WHERE id=?",[image,req.params.id]);if(!result.affectedRows)throw new ApiError(404,"Category not found.","CATEGORY_NOT_FOUND");res.json({message:image?"Category image updated.":"Category image removed."});};

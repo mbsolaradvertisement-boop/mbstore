@@ -5,6 +5,7 @@ export const getAdminCategory=id=>api.get(`/admin/categories/${id}`);
 export const createCategory=data=>api.post("/admin/categories",data);
 export const updateCategory=(id,data)=>api.put(`/admin/categories/${id}`,data);
 export const updateCategoryStatus=(id,status)=>api.patch(`/admin/categories/${id}/status`,{status});
+export const updateCategoryImage=(id,imageUrl)=>api.put(`/admin/categories/${id}/image`,{imageUrl});
 export const deleteCategory=id=>api.delete(`/admin/categories/${id}`);
 export const getCategories=()=>api.get("/categories");
 export const getCategoryFields=id=>api.get(`/categories/${id}/fields`);

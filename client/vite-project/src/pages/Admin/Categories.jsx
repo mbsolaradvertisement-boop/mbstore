@@ -5,7 +5,7 @@ import DashboardShell from "../Dashboards/DashboardShell";
 import CategoryFieldsEditor,{newCategoryFields,validateCategoryDraft} from "../../components/admin/CategoryFieldsEditor";
 import {useToast} from "../../context/ToastContext";
 import {apiMessage} from "../../lib/api";
-import {createCategory,deleteCategory,getAdminCategories,getAdminCategory,updateCategory,updateCategoryStatus} from "../../services/categoryService";
+import {createCategory,deleteCategory,getAdminCategories,getAdminCategory,updateCategory,updateCategoryImage,updateCategoryStatus} from "../../services/categoryService";
 
 export default function Categories(){
   const {toast}=useToast();
@@ -14,7 +14,7 @@ export default function Categories(){
   useEffect(()=>{const timer=setTimeout(()=>{setQuery(search.trim());setPage(1)},300);return()=>clearTimeout(timer)},[search]);
   const load=useCallback(async()=>{setLoading(true);try{const {data}=await getAdminCategories({search:query||undefined,status:status||undefined,sort,page,limit:20});setRows(data.data);setStats(data.stats);setMeta(data)}catch(e){toast(apiMessage(e),"error")}finally{setLoading(false)}},[query,status,sort,page,toast]);
   useEffect(()=>{load()},[load]);
-  const submit=async event=>{event.preventDefault();const nextErrors=validateCategoryDraft(form);setErrors(nextErrors);if(nextErrors.name||nextErrors.attributes||nextErrors.fields?.some(Boolean))return toast("Please correct the category fields.","error");setSaving(true);try{const payload={name:form.name.trim(),status:form.status,attributes:form.attributes};if(form.id)await updateCategory(form.id,payload);else await createCategory(payload);toast(`Category ${form.id?"updated":"created"} successfully.`);setForm(null);await load()}catch(e){toast(apiMessage(e),"error")}finally{setSaving(false)}};
+  const submit=async event=>{event.preventDefault();const nextErrors=validateCategoryDraft(form);setErrors(nextErrors);if(nextErrors.name||nextErrors.attributes||nextErrors.fields?.some(Boolean))return toast("Please correct the category fields.","error");setSaving(true);try{const payload={name:form.name.trim(),status:form.status,attributes:form.attributes};let categoryId=form.id;if(categoryId)await updateCategory(categoryId,payload);else{const {data}=await createCategory(payload);categoryId=data.category.id}if(form.imageUrl!==undefined)await updateCategoryImage(categoryId,form.imageUrl);toast(`Category ${form.id?"updated":"created"} successfully.`);setForm(null);await load()}catch(e){toast(apiMessage(e),"error")}finally{setSaving(false)}};
   const show=async id=>{try{const {data}=await getAdminCategory(id);setView(data.category)}catch(e){toast(apiMessage(e),"error")}};
   const act=async()=>{try{if(confirm.kind==="status")await updateCategoryStatus(confirm.row.id,confirm.row.status==="active"?"inactive":"active");else await deleteCategory(confirm.row.id);toast("Category updated successfully.");setConfirm(null);await load()}catch(e){toast(apiMessage(e),"error")}};
   const cards=[["Total Categories",stats.totalCategories||0,"bg-blue-50 text-blue-700"],["Active Categories",stats.activeCategories||0,"bg-emerald-50 text-emerald-700"],["Inactive Categories",stats.inactiveCategories||0,"bg-slate-100 text-slate-600"]];

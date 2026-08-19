@@ -16,17 +16,32 @@ async function migrate() {
     for (const statement of statements) {
       await connection.query(statement);
     }
-    // Non-destructive upgrade path for databases created by the former
-    // Firebase phone-auth schema. Legacy rows are preserved for manual email
-    // backfill; all newly-created accounts use email only.
+    // Non-destructive upgrade path for older account schemas.
     const [userColumns] = await connection.query("SHOW COLUMNS FROM users");
     const userColumnNames = new Set(userColumns.map((column) => column.Field));
     if (!userColumnNames.has("email")) await connection.query("ALTER TABLE users ADD COLUMN email VARCHAR(254) NULL UNIQUE AFTER name");
     if (!userColumnNames.has("email_verified")) await connection.query("ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT FALSE AFTER login_allowed");
+    if (!userColumnNames.has("password_hash")) await connection.query("ALTER TABLE users ADD COLUMN password_hash VARCHAR(255) NULL AFTER email");
     if (userColumnNames.has("phone")) await connection.query("ALTER TABLE users MODIFY COLUMN phone VARCHAR(16) NULL");
     const roleColumn = userColumns.find((column) => column.Field === "role");
     if (roleColumn && !roleColumn.Type.includes("Support")) await connection.query("ALTER TABLE users MODIFY COLUMN role ENUM('Admin','Seller','Customer','Support') NOT NULL");
     if (!userColumnNames.has("gender")) await connection.query("ALTER TABLE users ADD COLUMN gender ENUM('Male','Female','Other') NULL AFTER role");
+    await connection.query("DROP TABLE IF EXISTS email_otps");
+
+    const [sessionIndexes] = await connection.query("SHOW INDEX FROM sessions");
+    if (!sessionIndexes.some((index) => index.Key_name === "idx_sessions_user_expiry")) {
+      await connection.query("CREATE INDEX idx_sessions_user_expiry ON sessions(user_id,expires_at)");
+    }
+    const [sessionColumns] = await connection.query("SHOW COLUMNS FROM sessions");
+    const sessionColumnNames = new Set(sessionColumns.map((column) => column.Field));
+    if (!sessionColumnNames.has("refresh_token_hash")) await connection.query("ALTER TABLE sessions ADD COLUMN refresh_token_hash CHAR(64) NULL UNIQUE AFTER jwt_token");
+    if (!sessionColumnNames.has("previous_refresh_token_hash")) await connection.query("ALTER TABLE sessions ADD COLUMN previous_refresh_token_hash CHAR(64) NULL AFTER refresh_token_hash");
+    if (!sessionColumnNames.has("revoked_at")) await connection.query("ALTER TABLE sessions ADD COLUMN revoked_at DATETIME NULL AFTER expires_at");
+    if (!sessionColumnNames.has("user_agent")) await connection.query("ALTER TABLE sessions ADD COLUMN user_agent VARCHAR(255) NULL AFTER device");
+    if (!sessionColumnNames.has("updated_at")) await connection.query("ALTER TABLE sessions ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at");
+    const jwtColumn = sessionColumns.find((column) => column.Field === "jwt_token");
+    if (jwtColumn && jwtColumn.Null === "NO") await connection.query("ALTER TABLE sessions MODIFY COLUMN jwt_token CHAR(64) NULL");
+    await connection.query("DELETE FROM sessions WHERE expires_at < NOW() OR revoked_at IS NOT NULL");
 
     const [sellerColumns] = await connection.query("SHOW COLUMNS FROM seller_verifications");
     const sellerColumnNames = new Set(sellerColumns.map((column) => column.Field));
@@ -34,6 +49,10 @@ async function migrate() {
     if (!sellerColumnNames.has("contact_person")) await connection.query("ALTER TABLE seller_verifications ADD COLUMN contact_person VARCHAR(120) NULL AFTER gst_number");
 
     const [productImageColumns] = await connection.query("SHOW COLUMNS FROM product_images");
+    const [categoryColumns] = await connection.query("SHOW COLUMNS FROM categories");
+    if (!categoryColumns.some((column) => column.Field === "image_url")) await connection.query("ALTER TABLE categories ADD COLUMN image_url MEDIUMTEXT NULL AFTER slug");
+    const [bannerOrderRows] = await connection.query("SELECT id FROM home_banners ORDER BY display_order, created_at, id");
+    for (let index = 0; index < bannerOrderRows.length; index += 1) await connection.execute("UPDATE home_banners SET display_order=? WHERE id=?", [index + 1, bannerOrderRows[index].id]);
     const productImageUrl = productImageColumns.find((column) => column.Field === "image_url");
     if (productImageUrl && !/mediumtext/i.test(productImageUrl.Type)) {
       await connection.query("ALTER TABLE product_images MODIFY COLUMN image_url MEDIUMTEXT NOT NULL");

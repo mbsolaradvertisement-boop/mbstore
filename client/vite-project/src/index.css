@@ -1,6 +1,13 @@
 @import "tailwindcss";
+
+/* Hide browser-provided password controls because the auth form supplies its own accessible reveal button. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
 @import "swiper/css";
 @import "swiper/css/pagination";
+@import "swiper/css/navigation";
 
 :root {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -25,6 +32,36 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .swiper-pagination-bullet { background: #cbd5e1; opacity: 1; }
 .swiper-pagination-bullet-active { background: #0ea5e9; width: 1.5rem; border-radius: 99px; }
+
+.home-banner-swiper .swiper-button-prev,
+.home-banner-swiper .swiper-button-next {
+  top: 50%;
+  z-index: 30;
+  width: 3rem;
+  height: 3rem;
+  margin-top: 0;
+  transform: translateY(-50%);
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 9999px;
+  background: rgb(15 23 42 / 72%);
+  color: white;
+  opacity: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: opacity 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+.home-banner-swiper .swiper-button-prev { left: clamp(.75rem, 1.5vw, 1.5rem); }
+.home-banner-swiper .swiper-button-next { right: clamp(.75rem, 1.5vw, 1.5rem); }
+.home-banner-swiper:hover .swiper-button-prev,
+.home-banner-swiper:hover .swiper-button-next,
+.home-banner-swiper:focus-within .swiper-button-prev,
+.home-banner-swiper:focus-within .swiper-button-next { opacity: 1; }
+.home-banner-swiper .swiper-button-prev:hover,
+.home-banner-swiper .swiper-button-next:hover { background: rgb(2 132 199 / 92%); transform: translateY(-50%) scale(1.06); }
+.home-banner-swiper .swiper-button-prev::after,
+.home-banner-swiper .swiper-button-next::after { font-size: 1rem; font-weight: 900; }
+.home-banner-swiper .swiper-pagination { bottom: .8rem !important; }
+.home-banner-swiper .swiper-pagination-bullet { box-shadow: 0 1px 4px rgb(15 23 42 / 35%); }
 
 .placeholder-pattern {
   background-color: #f1f5f9;

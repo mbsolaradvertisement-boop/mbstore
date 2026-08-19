@@ -5,7 +5,7 @@ import DashboardShell from "../Dashboards/DashboardShell";
 import api, { apiMessage } from "../../lib/api";
 import { useToast } from "../../context/ToastContext";
 
-const empty={name:"",email:"",gender:""};
+const empty={name:"",email:"",gender:"",password:"",confirmPassword:""};
 export default function SupportManagement(){
   const {toast}=useToast(); const [rows,setRows]=useState([]); const [analytics,setAnalytics]=useState(null); const [pagination,setPagination]=useState({page:1,total:0,totalPages:1}); const [search,setSearch]=useState(""); const [status,setStatus]=useState(""); const [form,setForm]=useState(null); const [errors,setErrors]=useState({}); const [busy,setBusy]=useState(false);
   const load=useCallback(async(page=1)=>{try{const {data}=await api.get("/admin/support",{params:{page,limit:10,search:search||undefined,status:status||undefined}});setRows(data.data);setPagination(data.pagination)}catch(error){toast(apiMessage(error),"error")}},[search,status,toast]);

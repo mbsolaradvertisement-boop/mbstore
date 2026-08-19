@@ -2,7 +2,7 @@ const {pool}=require("../config/database");
 const ApiError=require("../utils/api-error");
 const categories=require("../services/category.service");
 const positiveInt=(value,fallback,max)=>{const n=Number.parseInt(value,10);return Number.isFinite(n)&&n>0?Math.min(n,max):fallback};
-const map=row=>({id:row.id,categoryCode:row.category_code,name:row.name,slug:row.slug,status:row.status,productCount:Number(row.product_count||0),createdAt:row.created_at,updatedAt:row.updated_at});
+const map=row=>({id:row.id,categoryCode:row.category_code,name:row.name,slug:row.slug,imageUrl:row.image_url||null,status:row.status,productCount:Number(row.product_count||0),createdAt:row.created_at,updatedAt:row.updated_at});
 
 exports.publicList=async(_req,res)=>{const [rows]=await pool.query("SELECT id,category_code,name,slug FROM categories WHERE status='active' ORDER BY name");res.json({data:rows.map(map)});};
 exports.publicFields=async(req,res)=>{const [rows]=await pool.execute("SELECT id FROM categories WHERE id=? AND status='active'",[req.params.id]);if(!rows[0])throw new ApiError(404,"Active category not found.","CATEGORY_NOT_FOUND");res.json({data:await categories.fields(req.params.id)});};

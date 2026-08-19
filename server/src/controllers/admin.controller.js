@@ -1,6 +1,8 @@
 const { pool } = require("../config/database");
 const { sendSellerDecision, sendProductModeration } = require("../services/email.service");
 const ApiError = require("../utils/api-error");
+const bcrypt = require("bcryptjs");
+const { validateProfile, mapProfile } = require("../services/profile.service");
 
 function numberParam(value, fallback, maximum) {
   const parsed = Number.parseInt(value, 10);
@@ -130,6 +132,30 @@ function managementList(role) { return async (req, res) => {
 
 exports.sellers = managementList("Seller");
 exports.customers = managementList("Customer");
+
+async function sellerByUserId(userId) {
+  const [rows] = await pool.execute("SELECT p.*,u.status FROM seller_profiles p JOIN users u ON u.id=p.user_id WHERE p.user_id=? AND u.role='Seller' LIMIT 1", [userId]);
+  return rows[0] ? mapProfile(rows[0], "Seller") : null;
+}
+
+exports.seller = async (req,res) => { const seller=await sellerByUserId(req.params.id); if(!seller)throw new ApiError(404,"Seller not found.","SELLER_NOT_FOUND"); res.json({seller}); };
+
+exports.createSeller = async (req,res) => {
+  const data=validateProfile(req.body,"Seller",false); const password=String(req.body.password||"");
+  if(password.length<8||password.length>72)throw new ApiError(422,"Password must contain between 8 and 72 characters.","INVALID_PASSWORD");
+  if(!data.companyName||data.companyName.length<2)throw new ApiError(422,"Company name is required.","INVALID_COMPANY");
+  if(!data.gst)throw new ApiError(422,"A valid GST number is required.","INVALID_GST");
+  const connection=await pool.getConnection();
+  try{await connection.beginTransaction();const passwordHash=await bcrypt.hash(password,12);const [user]=await connection.execute("INSERT INTO users (name,email,password_hash,role,status,login_allowed,email_verified) VALUES (?,?,?,'Seller','Verified',TRUE,TRUE)",[data.sellerName,data.email.toLowerCase(),passwordHash]);let sellerId;do{sellerId=`MBS-${Math.floor(100000+Math.random()*900000)}`}while((await connection.execute("SELECT 1 FROM seller_profiles WHERE seller_id=?",[sellerId]))[0].length);await connection.execute("INSERT INTO seller_profiles (user_id,seller_id,seller_name,email,phone_number,address,state,district,area,landmark,company_name,business_email,gst,website,verification_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'Verified')",[user.insertId,sellerId,data.sellerName,data.email.toLowerCase(),data.phoneNumber,data.address,data.state,data.district,data.area,data.landmark,data.companyName,data.businessEmail,data.gst,data.website]);await connection.execute("INSERT INTO seller_verifications (user_id,business_name,gst_number,contact_person,verification_status,verified_by,verified_at) VALUES (?,?,?,?,'Verified',?,NOW())",[user.insertId,data.companyName,data.gst,data.sellerName,req.user.id]);await connection.execute("INSERT INTO seller_settings (seller_id) VALUES (?)",[user.insertId]);await connection.commit();res.status(201).json({message:"Seller created successfully.",seller:await sellerByUserId(user.insertId)});}catch(error){await connection.rollback();if(error.code==="ER_DUP_ENTRY")throw new ApiError(409,"Email or GST number already exists.","DUPLICATE_SELLER");throw error;}finally{connection.release();}
+};
+
+exports.updateSeller = async (req,res) => {
+  const data=validateProfile(req.body,"Seller",true); const current=await sellerByUserId(req.params.id); if(!current)throw new ApiError(404,"Seller not found.","SELLER_NOT_FOUND"); const connection=await pool.getConnection();
+  try{await connection.beginTransaction();await connection.execute("UPDATE users SET name=?,email=? WHERE id=? AND role='Seller'",[data.sellerName??current.sellerName,(data.email??current.email).toLowerCase(),req.params.id]);await connection.execute("UPDATE seller_profiles SET seller_name=?,email=?,phone_number=?,address=?,state=?,district=?,area=?,landmark=?,company_name=?,business_email=?,gst=?,website=? WHERE user_id=?",[data.sellerName??current.sellerName,(data.email??current.email).toLowerCase(),data.phoneNumber??current.phoneNumber,data.address??current.address,data.state??current.state,data.district??current.district,data.area??current.area,data.landmark??current.landmark,data.companyName??current.companyName,data.businessEmail??current.businessEmail,data.gst??current.gst,data.website??current.website,req.params.id]);await connection.execute("UPDATE seller_verifications SET business_name=?,gst_number=?,contact_person=? WHERE user_id=?",[data.companyName??current.companyName,data.gst??current.gst,data.sellerName??current.sellerName,req.params.id]);await connection.commit();res.json({message:"Seller updated successfully.",seller:await sellerByUserId(req.params.id)});}catch(error){await connection.rollback();if(error.code==="ER_DUP_ENTRY")throw new ApiError(409,"Email, phone, or GST number already exists.","DUPLICATE_SELLER");throw error;}finally{connection.release();}
+};
+
+exports.sellerStatus = async (req,res) => { const active=req.body.status==="Verified";const [result]=await pool.execute("UPDATE users SET status=?,login_allowed=? WHERE id=? AND role='Seller'",[active?"Verified":"Inactive",active,req.params.id]);if(!result.affectedRows)throw new ApiError(404,"Seller not found.","SELLER_NOT_FOUND");if(!active)await pool.execute("DELETE FROM sessions WHERE user_id=?",[req.params.id]);res.json({message:`Seller ${active?"activated":"deactivated"} successfully.`}); };
+exports.removeSeller = async (req,res) => { req.body.status="Inactive"; return exports.sellerStatus(req,res); };
 
 exports.products = async (req, res) => {
   const page = numberParam(req.query.page, 1, 100000), limit = numberParam(req.query.limit, 20, 100), offset = (page - 1) * limit;
