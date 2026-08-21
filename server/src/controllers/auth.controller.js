@@ -17,4 +17,4 @@ exports.refresh=async(req,res)=>{try{return setSession(res,await auth.refreshSes
 exports.forgotPassword=async(req,res)=>res.json(await auth.forgotPassword(req.body.email));
 exports.resetPassword=async(req,res)=>res.json(await auth.resetPassword(req.body.token,req.body.password));
 exports.logout=async(req,res)=>{await auth.logout(req.cookies[REFRESH_COOKIE],req.cookies[ACCESS_COOKIE]||req.cookies[LEGACY_COOKIE]);clearSessionCookies(res).status(204).end();};
-exports.me=async(req,res)=>res.json({authenticated:true,user:auth.publicUser(req.user)});
+exports.me=async(req,res)=>res.json(req.user?{authenticated:true,user:auth.publicUser(req.user)}:{authenticated:false,user:null});
