@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Navigate, useParams } from "react-router-dom";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { FiArrowRight, FiBell, FiBox, FiCheckCircle, FiDownload, FiEdit2, FiEye, FiFileText, FiFilter, FiHelpCircle, FiImage, FiMail, FiMessageCircle, FiMoreHorizontal, FiPaperclip, FiPlus, FiSearch, FiSend, FiTrash2, FiUpload, FiUsers, FiX } from "react-icons/fi";
+import { FiArrowRight, FiBell, FiBox, FiCheckCircle, FiDownload, FiEdit2, FiEye, FiFileText, FiFilter, FiHelpCircle, FiImage, FiMail, FiMessageCircle, FiMoreHorizontal, FiPlus, FiSearch, FiSend, FiTrash2, FiUpload, FiUsers, FiX } from "react-icons/fi";
 import { enquiries, monthlyData, notices, quotations, sellerLeads, sellerProducts } from "../../data/sellerData";
 import { ProfileContent } from "../Profiles/ProfilePage";
 import { getSellerQuotations } from "../../services/quotationService";

@@ -31,7 +31,7 @@ export default function SupportLayout() {
     {open && <button aria-label="Close navigation" onClick={() => setOpen(false)} className="fixed inset-0 z-40 bg-black/40 lg:hidden" />}
     <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-200 bg-white shadow-sm transition-all duration-300 ${collapsed ? "w-20" : "w-64"} ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
       <div className="flex h-20 items-center justify-between border-b border-slate-200 px-5">
-        <Link to="/support/dashboard"><img src="/assests/mb.png" alt="MB Store" className={`h-12 object-contain object-left ${collapsed ? "w-10 object-cover" : "w-44"}`} /></Link>
+        <Link to="/support/dashboard"><img src={collapsed ? "/assests/mb-small.png" : "/assests/mb.png"} alt="MB Store" className={`object-contain ${collapsed ? "h-10 w-10" : "h-12 w-44 object-left"}`} /></Link>
         <button onClick={() => setOpen(false)} className="lg:hidden"><FiX size={22} /></button>
       </div>
       <nav className="mt-4 flex-1 overflow-y-auto px-3">

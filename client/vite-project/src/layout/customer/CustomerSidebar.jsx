@@ -118,7 +118,7 @@ export default function CustomerSidebar({
             to="/customer/home"
             className="flex items-center gap-3"
           >
-            <img src="/assests/mb.png" alt="MB Store" className={`h-12 object-contain object-left ${collapsed ? "w-11 object-cover" : "w-44"}`} />
+            <img src={collapsed ? "/assests/mb-small.png" : "/assests/mb.png"} alt="MB Store" className={`object-contain ${collapsed ? "h-11 w-11" : "h-12 w-44 object-left"}`} />
           </Link>
 
           {/* Mobile Close */}
