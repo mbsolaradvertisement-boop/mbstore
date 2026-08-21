@@ -1,5 +1,5 @@
 const { pool } = require("../config/database");
-const { sendSellerDecision, sendProductModeration } = require("../services/email.service");
+const { sendSellerDecision, sendProductModeration, sendWelcomeCustomer } = require("../services/email.service");
 const ApiError = require("../utils/api-error");
 const bcrypt = require("bcryptjs");
 const { validateProfile, mapProfile } = require("../services/profile.service");
@@ -132,6 +132,31 @@ function managementList(role) { return async (req, res) => {
 
 exports.sellers = managementList("Seller");
 exports.customers = managementList("Customer");
+
+exports.createCustomer = async (req, res) => {
+  const data = validateProfile(req.body, "Customer", false);
+  const password = String(req.body.password || "");
+  if (password.length < 8 || password.length > 72) throw new ApiError(422, "Password must contain between 8 and 72 characters.", "INVALID_PASSWORD");
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const passwordHash = await bcrypt.hash(password, 12);
+    const email = data.email.toLowerCase();
+    const [user] = await connection.execute("INSERT INTO users (name,email,password_hash,role,status,login_allowed,email_verified) VALUES (?,?,?,'Customer','Verified',TRUE,TRUE)", [data.customerName, email, passwordHash]);
+    let customerId;
+    do { customerId = `MBS-${Math.floor(100000 + Math.random() * 900000)}`; }
+    while ((await connection.execute("SELECT 1 FROM customer_profiles WHERE customer_id=?", [customerId]))[0].length);
+    await connection.execute("INSERT INTO customer_profiles (user_id,customer_id,customer_name,email,phone_number,address,state,district,area,landmark) VALUES (?,?,?,?,?,?,?,?,?,?)", [user.insertId, customerId, data.customerName, email, data.phoneNumber, data.address, data.state, data.district, data.area, data.landmark]);
+    await connection.execute("INSERT INTO customer_settings (customer_id) VALUES (?)", [user.insertId]);
+    await connection.commit();
+    sendWelcomeCustomer(email, data.customerName).catch((error) => console.error("Welcome email failed:", error.message));
+    res.status(201).json({ message: "Customer created successfully.", customer: { userId: user.insertId, customerId, customerName: data.customerName, email } });
+  } catch (error) {
+    await connection.rollback();
+    if (error.code === "ER_DUP_ENTRY") throw new ApiError(409, "Email or phone number already exists.", "DUPLICATE_CUSTOMER");
+    throw error;
+  } finally { connection.release(); }
+};
 
 async function sellerByUserId(userId) {
   const [rows] = await pool.execute("SELECT p.*,u.status FROM seller_profiles p JOIN users u ON u.id=p.user_id WHERE p.user_id=? AND u.role='Seller' LIMIT 1", [userId]);

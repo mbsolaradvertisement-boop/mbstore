@@ -21,6 +21,7 @@ router.put("/sellers/:id", param("id").isInt({min:1}), validate, asyncHandler(co
 router.patch("/sellers/:id/status", [param("id").isInt({min:1}),body("status").isIn(["Verified","Inactive"])], validate, asyncHandler(controller.sellerStatus));
 router.delete("/sellers/:id", param("id").isInt({min:1}), validate, asyncHandler(controller.removeSeller));
 router.get("/customers", asyncHandler(controller.customers));
+router.post("/customers", asyncHandler(controller.createCustomer));
 router.get("/products", asyncHandler(controller.products));
 router.get("/product-reports", asyncHandler(controller.productReports));
 router.patch("/product-reports/:id/status", [param("id").isInt({min:1}), body("status").isIn(["actioned","dismissed"]), body("note").optional().trim().isLength({max:500})], validate, asyncHandler(controller.productReportStatus));
