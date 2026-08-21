@@ -1,8 +1,11 @@
 const auth=require("../services/auth.service");
 const ACCESS_COOKIE="accessToken",REFRESH_COOKIE="refreshToken",LEGACY_COOKIE="mb_session";
 const ACCESS_MS=15*60*1000,SEVEN_DAYS_MS=7*24*60*60*1000;
-const sameSite=process.env.COOKIE_SAME_SITE||"lax";
-const baseCookie={httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite};
+const isProduction=process.env.NODE_ENV==="production";
+// The Vercel client and Render API are cross-site, so production cookies must
+// explicitly opt in to cross-site credentialed requests.
+const sameSite=process.env.COOKIE_SAME_SITE||(isProduction?"none":"lax");
+const baseCookie={httpOnly:true,secure:isProduction||sameSite==="none",sameSite};
 const metadata=req=>({device:req.get("user-agent"),ip:req.ip});
 const clearOptions=path=>({...baseCookie,path});
 function setSession(res,result,status=200){const refreshMaxAge=Math.max(0,Math.min(SEVEN_DAYS_MS,result.expiresAt.getTime()-Date.now()));return res.status(status).clearCookie(LEGACY_COOKIE,clearOptions("/")).cookie(ACCESS_COOKIE,result.accessToken,{...baseCookie,maxAge:ACCESS_MS,path:"/"}).cookie(REFRESH_COOKIE,result.refreshToken,{...baseCookie,maxAge:refreshMaxAge,expires:result.expiresAt,path:"/api/auth"}).json({success:true,user:result.user});}

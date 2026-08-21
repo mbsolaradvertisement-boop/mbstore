@@ -28,7 +28,20 @@ const { errorHandler, notFound } = require("./middleware/error.middleware");
 const app = express();
 app.set("trust proxy", 1);
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173", credentials: true }));
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "https://mbstorehub.vercel.app",
+  ...String(process.env.CLIENT_URL || "").split(","),
+  ...String(process.env.CLIENT_URLS || "").split(","),
+].map(origin => origin.trim().replace(/\/$/, "")).filter(Boolean));
+app.use(cors({
+  credentials: true,
+  origin(origin, callback) {
+    // Requests without an Origin header are not browser cross-origin requests.
+    if (!origin || allowedOrigins.has(origin.replace(/\/$/, ""))) return callback(null, true);
+    return callback(null, false);
+  },
+}));
 // Company logos are capped at 200 KB; base64 encoding requires a slightly larger JSON envelope.
 app.use(express.json({ limit: "6mb" }));
 app.use(cookieParser());
