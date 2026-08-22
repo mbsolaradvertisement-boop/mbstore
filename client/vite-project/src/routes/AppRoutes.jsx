@@ -4,8 +4,7 @@ import PageLoader from "../components/Loader/PageLoader";
 import ProtectedRoute from "../components/ProtectedRoute";
 import { useAuth } from "../context/AuthContext";
 
-const MINIMUM_TRANSITION_MS = 800;
-const lazyPage = importer => lazy(() => Promise.all([importer(), new Promise(resolve => window.setTimeout(resolve, MINIMUM_TRANSITION_MS))]).then(([module]) => module));
+const lazyPage = importer => lazy(importer);
 const Home=lazyPage(()=>import("../pages/Home")), Catalogue=lazyPage(()=>import("../pages/Products/Catalogue")), Companies=lazyPage(()=>import("../pages/Company")), AuthPage=lazyPage(()=>import("../pages/Auth/AuthPage"));
 const PasswordResetPage=lazyPage(()=>import("../pages/Auth/PasswordResetPage"));
 const CustomerHome=lazyPage(()=>import("../pages/Dashboards/CustomerHome")), SellerLayout=lazyPage(()=>import("../pages/Dashboards/SellerLayout")), SellerPages=lazyPage(()=>import("../pages/Dashboards/SellerPages")), AdminDashboard=lazyPage(()=>import("../pages/Dashboards/AdminDashboard"));

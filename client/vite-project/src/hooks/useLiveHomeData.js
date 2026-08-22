@@ -1,7 +1,7 @@
 import {useEffect,useState} from "react";
 import api from "../lib/api";
 
-const REFRESH_INTERVAL_MS=3000;
+const REFRESH_INTERVAL_MS=60000;
 
 export default function useLiveHomeData(endpoint,fallback){
   const [data,setData]=useState(null);

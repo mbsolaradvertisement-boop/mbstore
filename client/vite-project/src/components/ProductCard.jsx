@@ -13,7 +13,7 @@ function ProductCard({ product, onDetails, onQuote, onReport }) {
   const openDetails=()=>{onDetails?.(product);if(user?.role==="Customer")recordCatalogueProductView(product.id).catch(()=>{});};
   return <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl">
     <div className="flex items-center justify-between px-4 pb-2 pt-4">
-      <div className="flex min-w-0 items-center gap-2">{product.companyLogoUrl?<img src={apiAsset(product.companyLogoUrl)} alt={`${product.company} logo`} className="size-7 shrink-0 rounded-md object-contain"/>:<span className="grid size-7 place-items-center rounded-md bg-slate-100 text-[10px] font-black text-slate-500">{product.company?.slice(0,2).toUpperCase()}</span>}<span className="truncate text-xs font-black text-teal-700">{product.company}</span></div>
+      <div className="flex min-w-0 items-center gap-2">{product.companyLogoUrl?<img src={apiAsset(product.companyLogoUrl)} alt={`${product.company} logo`} loading="lazy" decoding="async" className="size-7 shrink-0 rounded-md object-contain"/>:<span className="grid size-7 place-items-center rounded-md bg-slate-100 text-[10px] font-black text-slate-500">{product.company?.slice(0,2).toUpperCase()}</span>}<span className="truncate text-xs font-black text-teal-700">{product.company}</span></div>
       <WishlistButton productId={product.id} className="relative right-auto top-auto size-8 border border-slate-100 shadow-none"/>
     </div>
     <div className="relative mx-4 aspect-square overflow-hidden rounded-2xl bg-[#fafafa]">
